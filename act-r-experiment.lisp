@@ -22,16 +22,26 @@
 (defparameter *geomates-port* 45678
   "TCP port on which the game server is listening for agent connections")
 
-(defun ensure-connection ()
+(defun ensure-connection () ;; VERBOSE VERSION (I have no SBCL debugger in ACT-R sorry)
   "(re)establishes the socket connection to the server"
-  (unless (open-stream-p *gstream*)
+  (format t "Try connecting...~%")
+  (unless (and *gstream* (open-stream-p *gstream*))
+    (format t "Connecting...~%")
     (unless *socket*
-      (setf *socket* (make-instance 'sb-bsd-sockets:inet-socket :type :stream :protocol :tcp)
-	    (sb-bsd-sockets:sockopt-tcp-nodelay *socket*)   t
-	    (sb-bsd-sockets:sockopt-reuse-address *socket*) t))
-    (sb-bsd-sockets:socket-bind *socket* *geomates-host* *geomates-port*)
-    (sb-bsd-sockets:socket-connect *socket*)
-    (setf *gstream* (sb-bsd-sockets:socket-make-stream *socket* :input t :output t :element-type :default))))
+      (setf *socket* (make-instance 'sb-bsd-sockets:inet-socket :type :stream :protocol :tcp))
+      (sb-bsd-sockets:sockopt-tcp-nodelay *socket*)  
+      (sb-bsd-sockets:sockopt-reuse-address *socket*)
+      (format t "Socket created: ~a~%" *socket*))
+    (handler-case
+        (progn
+          (sb-bsd-sockets:socket-connect *socket* *geomates-host* *geomates-port*)
+          (format t "Socket connected~%")
+          (setf *gstream* (sb-bsd-sockets:socket-make-stream *socket* :input t :output t :element-type 'character))
+          (format t "Stream created: ~a~%" *gstream*))
+      (error (e)
+        (format *error-output* "Error: Failed to connect - ~a~%" e)
+        (setf *socket* nil *gstream* nil)))))
+
 
 
 
