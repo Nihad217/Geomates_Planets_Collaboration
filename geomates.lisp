@@ -46,6 +46,7 @@
 
 
 (defparameter *path-to-wrapper-library* (or (probe-file "wrapper.so")
+					    (probe-file "wrapper.dll")
 					    (probe-file "ADD/YOUR/PATH/HERE"))
   "path to the shared library that wraps around the static box2d library")
 
