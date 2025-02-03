@@ -14,7 +14,7 @@
 (defvar *socket* nil
   "TCP/IP socket for talking to the game")
 
-(defvar *gstream* nil
+(defparameter *gstream* nil
   "stream for interfacing the game which uses *socket* for communication")
 
 (defparameter *geomates-host* #(127 0 0 1)
@@ -54,7 +54,7 @@
   ;; send data
   (ensure-connection)
   (clear-input *gstream*)
-  (write-char key *gstream*)
+  (format *gstream* key)
   (finish-output *gstream*)
   ;; read updated scene
   (multiple-value-bind (updated-scene err) (ignore-errors (read *gstream* nil nil nil))
