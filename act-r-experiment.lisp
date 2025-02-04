@@ -22,35 +22,29 @@
 (defparameter *geomates-port* 45678
   "TCP port on which the game server is listening for agent connections")
 
-(defun ensure-connection () ;; VERBOSE VERSION (I have no SBCL debugger in ACT-R sorry)
+(defun ensure-connection ()
   "(re)establishes the socket connection to the server"
-  (format t "Try connecting...~%")
+  (declare (optimize (safety 3) (debug 3)))
   (unless (and *gstream* (open-stream-p *gstream*))
     (format t "Connecting...~%")
     (unless *socket*
-      (setf *socket* (make-instance 'sb-bsd-sockets:inet-socket :type :stream :protocol :tcp))
-      (sb-bsd-sockets:sockopt-tcp-nodelay *socket*)  
-      (sb-bsd-sockets:sockopt-reuse-address *socket*)
-      (format t "Socket created: ~a~%" *socket*))
+      (setf *socket* (make-instance 'sb-bsd-sockets:inet-socket :type :stream :protocol :tcp)
+	    (sb-bsd-sockets:sockopt-tcp-nodelay *socket*)
+	    (sb-bsd-sockets:sockopt-reuse-address *socket*)))
     (handler-case
-        (progn
+	(progn
           (sb-bsd-sockets:socket-connect *socket* *geomates-host* *geomates-port*)
           (format t "Socket connected~%")
-          (setf *gstream* (sb-bsd-sockets:socket-make-stream *socket* :input t :output t :element-type 'character))
-          (format t "Stream created: ~a~%" *gstream*))
+          (setf *gstream* (sb-bsd-sockets:socket-make-stream *socket* :input t :output t :element-type 'character)))
       (error (e)
-        (format *error-output* "Error: Failed to connect - ~a~%" e)
-        (setf *socket* nil *gstream* nil)))))
-
-
-
-
+	(format *error-output* "Error: Failed to connect - ~a~%" e)
+	(setf *socket* nil *gstream* nil)))))
 
 ;; function to be called by ACT-R to handle key presses by the model
 ;; keypress is send to gameserver and updated scene is read back and inserted into visicon
 (defun respond-to-key-press (model key)
   "forward key presses to game server and update visual buffer"
-  (declare (ignore model))
+  (declare (optimize (safety 3) (debug 3)) (ignore model))
   ;; send data
   (ensure-connection)
   (clear-input *gstream*)
@@ -92,7 +86,7 @@
 					       diamonds ,diamonds)))))))))	  
 
 (defun geomates-experiment (&optional human)
-  
+  (declare (optimize (debug 3) (safety 3)))
   ; Reset the ACT-R system and any models that are defined to
   ; their initial states.
 
