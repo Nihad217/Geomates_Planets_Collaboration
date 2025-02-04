@@ -121,6 +121,24 @@
       (worldinsertplatform (coerce x1 'single-float) (coerce y1 'single-float) (coerce x2 'single-float) (coerce y2 'single-float)))
     (values diamonds platforms)))
 
+(defun act-r-scene-format (scene-string)
+  "Transforms the scene-string into the correct ACT-R format."
+  (let ((scene (read-from-string scene-string))) ;; Convert string to list
+    (setf scene
+          (mapcar (lambda (item)
+                    (case (car item)
+                      (:RECT (destructuring-bind (x y w h r d) (cdr item)
+                               `(:RECT SCREEN-X ,x SCREEN-Y ,y WIDTH ,w HEIGHT ,h ROTATION ,r DIAMONDS ,d)))
+                      (:DISC (destructuring-bind (x y r d) (cdr item)
+                               `(:DISC SCREEN-X ,x SCREEN-Y ,y RADIUS ,r DIAMONDS ,d)))
+                      (:DIAMOND (destructuring-bind (x y) (cdr item)
+                                 `(:DIAMOND SCREEN-X ,x SCREEN-Y ,y)))
+                      (:PLATFORM (destructuring-bind (x1 y1 x2 y2) (cdr item)
+                                  `(:PLATFORM SCREEN-X ,x1 SCREEN-Y ,y1 WIDTH ,(- x2 x1) HEIGHT ,(- y2 y1))))
+                      (t item))) scene)) ;; Apply transformation to each item in the scene
+    
+    ;; Now convert the modified scene list back into a string
+    (format nil "(~{~a~^ ~})" scene))) ;; Format the list as a string
 ;;
 ;; TCP/IP connections to agents 
 ;;
@@ -401,12 +419,12 @@
 				       (when *gui-connected?* ; to GUI (if one is connected)
 					 (sb-concurrency:enqueue current-scene *gui-view-queue*))
 				       (when rect-listens? ; to rect agent if it has send some command
-					 (write-line current-scene rect-agent-stream)
+					 (write-line (act-r-scene-format current-scene) rect-agent-stream)
 					 (finish-output rect-agent-stream)
 					 (setq rect-listens? nil
 					       message-from-disc nil))
 				       (when disc-listens? ; to disc agent if it has send some command
-					 (write-line current-scene disc-agent-stream)
+					 (write-line (act-r-scene-format current-scene) disc-agent-stream)
 					 (finish-output disc-agent-stream)
 					 (setq disc-listens? nil
 					       message-from-rect nil)))
