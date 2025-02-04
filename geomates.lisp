@@ -419,12 +419,12 @@
 				       (when *gui-connected?* ; to GUI (if one is connected)
 					 (sb-concurrency:enqueue current-scene *gui-view-queue*))
 				       (when rect-listens? ; to rect agent if it has send some command
-					 (write-line (act-r-scene-format current-scene) rect-agent-stream)
+					 (write-line  current-scene rect-agent-stream)
 					 (finish-output rect-agent-stream)
 					 (setq rect-listens? nil
 					       message-from-disc nil))
 				       (when disc-listens? ; to disc agent if it has send some command
-					 (write-line (act-r-scene-format current-scene) disc-agent-stream)
+					 (write-line  current-scene disc-agent-stream)
 					 (finish-output disc-agent-stream)
 					 (setq disc-listens? nil
 					       message-from-rect nil)))
