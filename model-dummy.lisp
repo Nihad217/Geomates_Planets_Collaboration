@@ -40,10 +40,23 @@
 ;;;
 
 (define-model lost-agent
+
+  ;; [find explanation in actr7.x/examples/vision-module]
+  (chunk-type (polygon-feature (:include visual-location)) regular)
+  (chunk-type (polygon (:include visual-object)) sides)
   
+  ;; [see definition in vision module]
+  ;;(chunk-type (oval (:include visual-object)) (oval t))
+  
+  ;; [might be obsolete] Do this to avoid the warnings when the chunks are created
+  (define-chunks true false polygon)
+  
+  ;; [might be obsolete] stuff the leftmost item
+  (set-visloc-default screen-x lowest)
+
   (chunk-type goal state intention)
   (chunk-type control intention button)
-  
+
   (add-dm
    (move-left) (move-right)
    (move-up)  (move-down)

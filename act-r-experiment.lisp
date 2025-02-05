@@ -60,30 +60,38 @@
       (loop for (what . attributes) in updated-scene do
 	(case what
 	  (:platform (destructuring-bind (x1 y1 x2 y2) attributes
-		       (add-visicon-features `(isa platform
+		       (add-visicon-features `(isa (polygon-feature polygon)
 						   screen-x ,(* 0.5 (+ x1 x2))
 						   screen-y ,(* 0.5 (+ y1 y2))
-						   height ,(abs (- y2 y1))
-						   width  ,(abs (- x2 x1))))))
+						   value (polygon "platform")
+               height ,(abs (- y2 y1))
+						   width  ,(abs (- x2 x1))
+               color black regular (true nil) sides (nil 4)))))
 
 	  (:diamond (destructuring-bind (x y) attributes
-		      (add-visicon-features `(isa diamond screen-x ,x screen-y ,y))))
+		      (add-visicon-features `(isa (polygon-feature polygon) 
+            screen-x ,x screen-y ,y
+            value (polygon "diamond")))))
 
 	  (:disc (destructuring-bind (x y radius diamonds) attributes
-		   (add-visicon-features `(isa disc
+		   (add-visicon-features `(isa oval
 					       screen-x ,x
 					       screen-y ,y
+                 value (oval "disc")
 					       radius ,radius
 					       diamonds ,diamonds))))
 	  
 	  (:rect (destructuring-bind (x y width height rotation diamonds) attributes
-		   (add-visicon-features `(isa rect
-					       screen-x ,x
-					       screen-y ,y
-					       height ,height
-					       width ,width
-					       rotation ,rotation
-					       diamonds ,diamonds)))))))))	  
+		   (add-visicon-features 
+            `(isa (polygon-feature polygon)
+						   screen-x ,x
+						   screen-y ,y
+						   value (polygon "rect")
+               height ,height
+						   width  ,width
+               rotation ,rotation
+               diamonds ,diamonds
+               color red regular (true nil) sides (nil 4)))))))))) 
 
 (defun geomates-experiment (&optional human)
   (declare (optimize (debug 3) (safety 3)))
