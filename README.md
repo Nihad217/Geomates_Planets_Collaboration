@@ -43,6 +43,19 @@ Only a single dynamic liberary needs to be build that wraps around box2d's stati
 
 Then, open viewer.html in a web browser and start your agents. Once both agents have connected, the game starts. It ends when all levels have been played. The list of levels is loaded from levels.lisp.
 
+## Connecting with ACT-R
+
+Assuming [ACT-R Sources](http://act-r.psy.cmu.edu/actr7.x/actr7.x.zip)  (actr7.x) are [compiled](http://act-r.psy.cmu.edu/actr7.x/QuickStart.txt) and in the same folder as the geomates folder run:
+
+Start Geomates i.e. ``docker run -p 8000:8000 -p 45678:45678 geomates:latest sbcl --script geomates.lisp``
+
+```
+sbcl --load "actr7.x/load-act-r.lisp" --load "geomates/act-r-experiment.lisp" --eval '(load-act-r-model "geomates/model-dummy.lisp")'
+```
+
+to start the agent evaluate `(geomates-experiment)` in the ACT-R REPL to get into the ACT-R GUI Environemnt `(run-environment)`.
+
+
 ## Author and License 
 
 The game is distributed as open source software as is. Author is Diedrich Wolter, address all requests to him. Geomates uses two Lisp packages provided under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0) for open source software: [base64](https://github.com/massung/base64) and [sha1](https://github.com/massung/sha1).
