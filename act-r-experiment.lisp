@@ -40,6 +40,14 @@
 	(format *error-output* "Error: Failed to connect - ~a~%" e)
 	(setf *socket* nil *gstream* nil)))))
 
+;; sending messages to the other agent
+;; messages need to be s-expressions or anything 'read'able by the lisp parser (lists, numbers, strings, etc.)
+;; sticking to a well-defined language such as KQML/KIF is a good idea
+(defun send-message (msg)
+  "sends a message (anyting printable, but should be an s-expression)"
+  (format *gstream* "~w~a~a" msg #\Return #\Newline)
+  (finish-output *gstream*))
+
 ;; function to be called by ACT-R to handle key presses by the model
 ;; keypress is send to gameserver and updated scene is read back and inserted into visicon
 (defun respond-to-key-press (model key)
