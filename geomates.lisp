@@ -310,6 +310,7 @@
 
 	     ;; play all levels
 	     (loop for level in *levels*
+		   for level-count from 1
 		   finally (progn (format info-stream "end~%")
 				  (finish-output info-stream)
 				  (close disc-agent-stream)
@@ -406,7 +407,7 @@
 				     
 				     ;; send current scene to anyone listening
 				     (let* ((*print-pretty* nil)
-					    (current-scene (format nil "((:RECT ~,2f ~,2f ~,2f ~,2f ~,4f ~d)(:DISC ~,2f ~,2f ~,2f ~d)~a~a~{~w~}~{~w~})"
+					    (current-scene (format nil "((:RECT ~,2f ~,2f ~,2f ~,2f ~,4f ~d)(:DISC ~,2f ~,2f ~,2f ~d)~a~a~{~w~}~{~w~}(:LEVEL ~d))"
 								  rect-pos-x rect-pos-y rect-width rect-height rect-rotation diamonds-rect
 								  disc-pos-x disc-pos-y +disc-radius+ diamonds-disc
 								  (if message-from-disc
@@ -415,7 +416,7 @@
 								  (if message-from-rect
 								      (list :msg->disc message-from-rect)
 								      "")
-								  diamonds platforms)))				       
+								  diamonds platforms level-count))) 
 				       (when *gui-connected?* ; to GUI (if one is connected)
 					 (sb-concurrency:enqueue current-scene *gui-view-queue*))
 				       (when rect-listens? ; to rect agent if it has send some command

@@ -22,6 +22,12 @@
 (defparameter *geomates-port* 45678
   "TCP port on which the game server is listening for agent connections")
 
+(defparameter *current-level* 0
+  "number of the current level")
+
+(defparameter *new-level* t
+  "flag set to true once iff a new level is received")
+
 (defun ensure-connection ()
   "(re)establishes the socket connection to the server"
   (declare (optimize (safety 3) (debug 3)))
@@ -66,40 +72,44 @@
       (format *standard-output* "~&installing scene in visicon, scene: ~w~%" updated-scene)
       (delete-all-visicon-features) ; reset visicon
       (loop for (what . attributes) in updated-scene do
-	(case what
-	  (:platform (destructuring-bind (x1 y1 x2 y2) attributes
-		       (add-visicon-features `(isa (polygon-feature polygon)
-						   screen-x ,(* 0.5 (+ x1 x2))
-						   screen-y ,(* 0.5 (+ y1 y2))
-						   value (polygon "platform")
+	    (case what
+	      (:level (let ((the-level (first attributes)))
+			(unless (equal *current-level* the-level)
+			  (setf *new-level* t
+				*current-level* the-level))))
+	      (:platform (destructuring-bind (x1 y1 x2 y2) attributes
+			   (add-visicon-features `(isa (polygon-feature polygon)
+						       screen-x ,(* 0.5 (+ x1 x2))
+						       screen-y ,(* 0.5 (+ y1 y2))
+						       value (polygon "platform")
                height ,(abs (- y2 y1))
-						   width  ,(abs (- x2 x1))
+	       width  ,(abs (- x2 x1))
                color black regular (true nil) sides (nil 4)))))
-
-	  (:diamond (destructuring-bind (x y) attributes
-		      (add-visicon-features `(isa (polygon-feature polygon) 
-            screen-x ,x screen-y ,y
-            value (polygon "diamond")))))
-
-	  (:disc (destructuring-bind (x y radius diamonds) attributes
-		   (add-visicon-features `(isa oval
-					       screen-x ,x
-					       screen-y ,y
-                 value (oval "disc")
-					       radius ,radius
-					       diamonds ,diamonds))))
-	  
-	  (:rect (destructuring-bind (x y width height rotation diamonds) attributes
-		   (add-visicon-features 
-            `(isa (polygon-feature polygon)
+	      
+	      (:diamond (destructuring-bind (x y) attributes
+			  (add-visicon-features `(isa (polygon-feature polygon) 
+						      screen-x ,x screen-y ,y
+						      value (polygon "diamond")))))
+	      
+	      (:disc (destructuring-bind (x y radius diamonds) attributes
+		       (add-visicon-features `(isa oval
 						   screen-x ,x
 						   screen-y ,y
-						   value (polygon "rect")
-               height ,height
-						   width  ,width
-               rotation ,rotation
-               diamonds ,diamonds
-               color red regular (true nil) sides (nil 4)))))))))) 
+						   value (oval "disc")
+						   radius ,radius
+						   diamonds ,diamonds))))
+	      
+	  (:rect (destructuring-bind (x y width height rotation diamonds) attributes
+		   (add-visicon-features 
+		    `(isa (polygon-feature polygon)
+			  screen-x ,x
+			  screen-y ,y
+			  value (polygon "rect")
+			  height ,height
+			  width  ,width
+			  rotation ,rotation
+			  diamonds ,diamonds
+			  color red regular (true nil) sides (nil 4))))))))))
 
 (defun geomates-experiment (&optional human)
   (declare (optimize (debug 3) (safety 3)))
