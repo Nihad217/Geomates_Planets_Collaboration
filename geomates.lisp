@@ -307,108 +307,111 @@
 	     (setq disc-agent-stream tcp-stream-1
 		   rect-agent-stream tcp-stream-2
 		   info-stream (make-broadcast-stream disc-agent-stream rect-agent-stream *standard-output*))
-
-	     ;; play all levels
-	     (loop for level in *levels*
-		   for level-count from 1
-		   finally (progn (format info-stream "end~%")
-				  (finish-output info-stream)
-				  (close disc-agent-stream)
-				  (close rect-agent-stream)
-				  (sb-bsd-sockets:socket-close agent-socket)
-				  (setq *gui-running?* nil)
-				  (format *standard-output* "disc: ~d diamond~:P~%rect: ~d diamond~:P~%"
-					  diamonds-disc diamonds-rect))
-		   do
-		      (slurp-input disc-agent-stream)
-		      (slurp-input rect-agent-stream)
-		      (let ((rect-aborts? nil) ; whether agents have requested to abort this level
-			    (disc-aborts? nil)
-			    (message-from-rect nil) ; messages agents wish to exchange
-			    (message-from-disc nil)
-			    (rect-listens? nil) ; whether the agent has send some data so it should be ready to listen as well
-			    (disc-listens? nil))
-			(multiple-value-bind (diamonds platforms) (setup-level level)
-			  ;; inform agents which player they control, depending on config
-			  (if +announce-who-am-i+
-			      (progn 
-				(format disc-agent-stream "(:playing disc)~a~a" #\Return #\Newline) 
-				(format rect-agent-stream "(:playing rect)~a~a" #\Return #\Newline) )
-			      (progn
-				(format disc-agent-stream "(:playing unknown)~a~a" #\Return #\Newline)
-				(format rect-agent-stream "(:playing unknown)~a~a" #\Return #\Newline)))
-			  (finish-output disc-agent-stream)
-			  (finish-output rect-agent-stream)
-
-			  ;; ply the level
-			  (loop while (and diamonds (not (and rect-aborts? disc-aborts?)))
-				finally (progn
-					  (format info-stream "level-finished~a~a" #\Return #\Newline)
-					  (finish-output info-stream)
-					  (destroyworld))
-				do
-				   ;; attend to disc agent
-				   ;(format t "~&disc agent listening: ~a" (listen disc-agent-stream))
-				   ;; note: streams are accessed byte-wise, not in character mode to avoid oddities of UTF-8 decode problems
-				   ;; in case a broken UTF octet sequence will be received (which will be the case in case of being connected
-				   ;; to some telnet that sends telnet protocol stuff
-				   (when (listen disc-agent-stream)
-				     (let ((chr (ignore-errors (read-byte disc-agent-stream))))
+	     (with-open-file (log (format nil "~{~d-~}log.txt" (reverse (subseq (multiple-value-list (decode-universal-time (get-universal-time))) 0 6)))
+				  :direction :output
+				  :if-does-not-exist :create
+				  :if-exists :supersede)
+	       ;; play all levels
+	       (loop for level in *levels*
+		     for level-count from 1
+		     finally (progn (format info-stream "end~%")
+				    (finish-output info-stream)
+				    (close disc-agent-stream)
+				    (close rect-agent-stream)
+				    (sb-bsd-sockets:socket-close agent-socket)
+				    (setq *gui-running?* nil)
+				    (format *standard-output* "disc: ~d diamond~:P~%rect: ~d diamond~:P~%"
+					    diamonds-disc diamonds-rect))
+		     do
+			(slurp-input disc-agent-stream)
+			(slurp-input rect-agent-stream)
+			(let ((rect-aborts? nil) ; whether agents have requested to abort this level
+			      (disc-aborts? nil)
+			      (message-from-rect nil) ; messages agents wish to exchange
+			      (message-from-disc nil)
+			      (rect-listens? nil) ; whether the agent has send some data so it should be ready to listen as well
+			      (disc-listens? nil))
+			  (multiple-value-bind (diamonds platforms) (setup-level level)
+			    ;; inform agents which player they control, depending on config
+			    (if +announce-who-am-i+
+				(progn 
+				  (format disc-agent-stream "(:playing disc)~a~a" #\Return #\Newline) 
+				  (format rect-agent-stream "(:playing rect)~a~a" #\Return #\Newline) )
+				(progn
+				  (format disc-agent-stream "(:playing unknown)~a~a" #\Return #\Newline)
+				  (format rect-agent-stream "(:playing unknown)~a~a" #\Return #\Newline)))
+			    (finish-output disc-agent-stream)
+			    (finish-output rect-agent-stream)
+			    
+			    ;; play the level
+			    (loop while (and diamonds (not (and rect-aborts? disc-aborts?)))
+				  finally (progn
+					    (format info-stream "level-finished~a~a" #\Return #\Newline)
+					    (finish-output info-stream)
+					    (destroyworld))
+				  do
+				     ;; attend to disc agent
+					;(format t "~&disc agent listening: ~a" (listen disc-agent-stream))
+				     ;; note: streams are accessed byte-wise, not in character mode to avoid oddities of UTF-8 decode problems
+				     ;; in case a broken UTF octet sequence will be received (which will be the case in case of being connected
+				     ;; to some telnet that sends telnet protocol stuff
+				     (when (listen disc-agent-stream)
+				       (let ((chr (ignore-errors (read-byte disc-agent-stream))))
 				       (setq disc-listens? t)
-				       (case chr
-					 (97 (moveDiscPlayer -5.0f0)) ; a
-					 (100 (moveDiscPlayer +5.0f0)) ; d
-					 (119 (jumpDiscPlayer +disc-force+)) ; w
-					 ;; messages get appended in order to make sure they will be delivered, not overridded by a newly received one. To this end,  message-from-disc gets reset to NIL after delivery to rect agent further below
-					 (109 (setq message-from-disc (append message-from-disc (read disc-agent-stream nil nil nil)))) ; m(...)
-					 (113 (setq disc-aborts? t))))) ; q
-				   
-				   ;; attend to rect agent
-				   ;(format t "~&rect agent listening: ~a" (listen rect-agent-stream))
-				   (when (listen rect-agent-stream)
-				     ; we read raw bytes to avoid problems in UTF decoding in case we receive illegal codes
-				     (let ((chr (ignore-errors (read-byte rect-agent-stream))))
-				       (setq rect-listens? t)
-				       (case chr
-					 (97 (moveRectPlayer (- +rect-force+))) ; a
-					 (100 (moveRectPlayer +rect-force+)) ; d
-					 (115 (transformRectPlayer +0.1f0)) ; s
-					 (119 (transformRectPlayer -0.1f0)) ; w
-					 (109 (setq message-from-rect (append message-from-rect (read rect-agent-stream nil nil nil)))) ; m(...) see note on messages above
-					 (113 (setq rect-aborts? t))))) ; q
-				   ;; step simulation and post updates to agents
-				   (let (disc-pos-x disc-pos-y rect-pos-x rect-pos-y rect-rotation rect-width rect-height)
-				     (dotimes (i 6) ; 6*1/60 ~ 0.1s
-				       (ignore-errors (stepworld)) ; tmp fix for box2d crashes
-				       ;; read poses from box2d
-				       (let ((pose-struct (deref (getDiscPlayerPose))))
+					 (case chr
+					   (97 (moveDiscPlayer -5.0f0)) ; a
+					   (100 (moveDiscPlayer +5.0f0)) ; d
+					   (119 (jumpDiscPlayer +disc-force+)) ; w
+					   ;; messages get appended in order to make sure they will be delivered, not overridded by a newly received one. To this end,  message-from-disc gets reset to NIL after delivery to rect agent further below
+					   (109 (setq message-from-disc (append message-from-disc (read disc-agent-stream nil nil nil)))) ; m(...)
+					   (113 (setq disc-aborts? t))))) ; q
+				     
+				     ;; attend to rect agent
+					;(format t "~&rect agent listening: ~a" (listen rect-agent-stream))
+				     (when (listen rect-agent-stream)
+					; we read raw bytes to avoid problems in UTF decoding in case we receive illegal codes
+				       (let ((chr (ignore-errors (read-byte rect-agent-stream))))
+					 (setq rect-listens? t)
+					 (case chr
+					   (97 (moveRectPlayer (- +rect-force+))) ; a
+					   (100 (moveRectPlayer +rect-force+)) ; d
+					   (115 (transformRectPlayer +0.1f0)) ; s
+					   (119 (transformRectPlayer -0.1f0)) ; w
+					   (109 (setq message-from-rect (append message-from-rect (read rect-agent-stream nil nil nil)))) ; m(...) see note on messages above
+					   (113 (setq rect-aborts? t))))) ; q
+				     ;; step simulation and post updates to agents
+				     (let (disc-pos-x disc-pos-y rect-pos-x rect-pos-y rect-rotation rect-width rect-height)
+				       (dotimes (i 6) ; 6*1/60 ~ 0.1s
+					 (ignore-errors (stepworld)) ; tmp fix for box2d crashes
+					 ;; read poses from box2d
+					 (let ((pose-struct (deref (getDiscPlayerPose))))
 					 (setq disc-pos-x (slot pose-struct 'x)
 					       disc-pos-y (slot pose-struct 'y)))
-				       (let ((pose-struct (deref (getRectPlayerPose))))
-					 (setq rect-pos-x (slot pose-struct 'x)
-					       rect-pos-y (slot pose-struct 'y)
-					       rect-rotation (slot pose-struct 'r)
-					       rect-width (slot pose-struct 'w)
-					       rect-height (slot pose-struct 'h)))
-				       ;; check for diamonds taken
-				       (let ((d (find-if #'(lambda (d)
-							     (> 2.0 (abs (- (complex (second d) (third d))
+					 (let ((pose-struct (deref (getRectPlayerPose))))
+					   (setq rect-pos-x (slot pose-struct 'x)
+						 rect-pos-y (slot pose-struct 'y)
+						 rect-rotation (slot pose-struct 'r)
+						 rect-width (slot pose-struct 'w)
+						 rect-height (slot pose-struct 'h)))
+					 ;; check for diamonds taken
+					 (let ((d (find-if #'(lambda (d)
+							       (> 2.0 (abs (- (complex (second d) (third d))
 									    (complex disc-pos-x disc-pos-y)))))
-							 diamonds)))
-					 (when d
-					   (setq diamonds (delete d diamonds))
-					   (incf diamonds-disc)))
-				       (let ((d (find-if #'(lambda (d)
-							     (< 0 (pointInRectPlayer (second d) (third d))))
-							 diamonds)))
-					 (when d
-					   (setq diamonds (delete d diamonds))
+							   diamonds)))
+					   (when d
+					     (setq diamonds (delete d diamonds))
+					     (incf diamonds-disc)))
+					 (let ((d (find-if #'(lambda (d)
+							       (< 0 (pointInRectPlayer (second d) (third d))))
+							   diamonds)))
+					   (when d
+					     (setq diamonds (delete d diamonds))
 					   (incf diamonds-rect))))
-				     
-				     ;; send current scene to anyone listening
-				     (let* ((*print-pretty* nil)
-					    (current-scene (format nil "((:RECT ~,2f ~,2f ~,2f ~,2f ~,4f ~d)(:DISC ~,2f ~,2f ~,2f ~d)~a~a~{~w~}~{~w~}(:LEVEL ~d))"
-								  rect-pos-x rect-pos-y rect-width rect-height rect-rotation diamonds-rect
+				       
+				       ;; send current scene to anyone listening
+				       (let* ((*print-pretty* nil)
+					      (current-scene (format nil "((:RECT ~,2f ~,2f ~,2f ~,2f ~,4f ~d)(:DISC ~,2f ~,2f ~,2f ~d)~a~a~{~w~}~{~w~}(:LEVEL ~d))"
+								     rect-pos-x rect-pos-y rect-width rect-height rect-rotation diamonds-rect
 								  disc-pos-x disc-pos-y +disc-radius+ diamonds-disc
 								  (if message-from-disc
 								      (list :msg->rect message-from-disc)
@@ -416,24 +419,26 @@
 								  (if message-from-rect
 								      (list :msg->disc message-from-rect)
 								      "")
-								  diamonds platforms level-count))) 
+								  diamonds platforms level-count)))
+					 (write-line current-scene log)
+					 (finish-output log)
 				       (when *gui-connected?* ; to GUI (if one is connected)
 					 (sb-concurrency:enqueue current-scene *gui-view-queue*))
-				       (when rect-listens? ; to rect agent if it has send some command
-					 (write-line  current-scene rect-agent-stream)
-					 (finish-output rect-agent-stream)
-					 (setq rect-listens? nil
-					       message-from-disc nil))
-				       (when disc-listens? ; to disc agent if it has send some command
+					 (when rect-listens? ; to rect agent if it has send some command
+					   (write-line  current-scene rect-agent-stream)
+					   (finish-output rect-agent-stream)
+					   (setq rect-listens? nil
+						 message-from-disc nil))
+					 (when disc-listens? ; to disc agent if it has send some command
 					 (write-line  current-scene disc-agent-stream)
 					 (finish-output disc-agent-stream)
 					 (setq disc-listens? nil
 					       message-from-rect nil)))
-				     ;; handling requests from GUI
-				     (unless (sb-concurrency:queue-empty-p *gui-command-queue*)
-				       (let ((command (sb-concurrency:dequeue *gui-command-queue*)))
-					 (format *standard-output* "received GUI command ~a.~%" command))))
-				   (sleep 0.1))))))
+				       ;; handling requests from GUI
+				       (unless (sb-concurrency:queue-empty-p *gui-command-queue*)
+					 (let ((command (sb-concurrency:dequeue *gui-command-queue*)))
+					   (format *standard-output* "received GUI command ~a.~%" command))))
+				     (sleep 0.1)))))))
 	;; clean-up on exit
 	(close disc-agent-stream)
 	(close rect-agent-stream)
