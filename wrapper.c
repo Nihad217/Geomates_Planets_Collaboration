@@ -2,6 +2,8 @@
 // dynamic library. Only those functions are currently supported
 // that we need for our 'geomates' competition.
 
+#define _USE_MATH_DEFINES
+#include <math.h>
 #include "wrapper.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -74,7 +76,7 @@ void initPlayers(float rx, float ry, float rs, float ratio, float rd, float rf, 
     b2Polygon dBox = b2MakeBox(boxW, boxH);
     b2ShapeDef rectShape = b2DefaultShapeDef();
     rectShape.density = rd;
-    rectShape.friction = rf;
+    rectShape.material.friction = rf;
     gRectShapeID = b2CreatePolygonShape(gRectPlayer, &rectShape, &dBox);
     
     // initialize the disc player
@@ -91,7 +93,7 @@ void initPlayers(float rx, float ry, float rs, float ratio, float rd, float rf, 
     disc.center.y = 0;
     b2ShapeDef discShapeDef = b2DefaultShapeDef();
     discShapeDef.density = dd;
-    discShapeDef.friction = df;
+    discShapeDef.material.friction = df;
     gDiscShapeID = b2CreateCircleShape(gDiscPlayer, &discShapeDef, &disc);
 }
 
@@ -112,7 +114,7 @@ void worldInsertDynamicBox(unsigned int idx, float posx, float posy, float sx, f
     b2Polygon dBox = b2MakeBox(sx,sy);
     b2ShapeDef shapeDef = b2DefaultShapeDef();
     shapeDef.density = density;
-    shapeDef.friction = friction;
+    shapeDef.material.friction = friction;
     b2CreatePolygonShape(newBody->b2Body, &shapeDef, &dBox);
 }
 
@@ -130,7 +132,7 @@ void worldInsertPlatform(float px, float py, float sx, float sy) {
     b2Polygon dBox = b2MakeBox(0.5*fabsf(sx-px),0.5*fabsf(sy-py));
     b2ShapeDef shapeDef = b2DefaultShapeDef();
     shapeDef.density = 1.0f;
-    shapeDef.friction = 0.3f;
+    shapeDef.material.friction = 0.3f;
     b2CreatePolygonShape(platformId, &shapeDef, &dBox);
 }
 
@@ -295,10 +297,9 @@ void transformRectPlayer(float step) {
     setRectWidthHeight(&w, &h);
     b2Polygon box = b2MakeBox(w,h);
     
+    
+    /* Depracted Code due b2World_OverlapPolygon
     // test whether the new shape fits into the world
-    b2Vec2 translation;
-    translation.x = 0.0f;
-    translation.y = 0.0f;
     b2QueryFilter filter = b2DefaultQueryFilter();
     obstacles.pos = b2Body_GetPosition(gRectPlayer);
     obstacles.left = 0;
@@ -306,7 +307,36 @@ void transformRectPlayer(float step) {
     obstacles.top = 0;
     obstacles.bottom = 0;
     
-    b2World_OverlapPolygon (gWorldID, &box, b2Body_GetTransform(gRectPlayer), filter, (b2OverlapResultFcn*)rectTransformCheck, &obstacles);
+    b2World_OverlapPolygon(gWorldID, &box, b2Body_GetTransform(gRectPlayer), filter, (b2OverlapResultFcn*)rectTransformCheck, &obstacles);
+    */
+
+
+    b2QueryFilter filter = b2DefaultQueryFilter();
+    obstacles.pos = b2Body_GetPosition(gRectPlayer);
+    obstacles.left = 0;
+    obstacles.right = 0;
+    obstacles.top = 0;
+    obstacles.bottom = 0;
+
+    b2AABB aabb;
+    float halfWidth = w / 2.0f;
+    float halfHeight = h / 2.0f;
+
+    aabb.lowerBound.x = - halfWidth;
+    aabb.lowerBound.y = - halfHeight;
+    aabb.upperBound.x = + halfWidth;
+    aabb.upperBound.y = + halfHeight;
+
+
+
+    b2World_OverlapAABB(
+        gWorldID,
+        aabb,
+        filter,
+        (b2OverlapResultFcn*)rectTransformCheck,
+        &obstacles
+    );
+
 
     //printf("pos: %f, %f;  left:%d right:%d top:%d bottom:%d\n", obstacles.pos.x, obstacles.pos.y, obstacles.left, obstacles.right, obstacles.top, obstacles.bottom);
     // only grow shape if not in contact from two opposing sides
@@ -326,7 +356,7 @@ int pointInRectPlayer(float x, float y) {
     posGlobal.y = y;
     b2Vec2 posLocal = b2InvTransformPoint (b2Body_GetTransform(gRectPlayer), posGlobal);
     b2Polygon rect = b2Shape_GetPolygon(gRectShapeID);
-    return b2PointInPolygon (posLocal, &rect);
+    return b2PointInPolygon (&rect, posLocal);
 }
 
 //
