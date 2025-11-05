@@ -150,20 +150,29 @@
           (sb-bsd-sockets:interrupted-error ()))))
 
 (defun await-agent-connections (port &optional (telnet2character-mode t))
-  "returns two streams once two agent have connected to the given TCP port"
+  "returns two streams once two agents have connected to the given TCP port"
   (let ((socket (make-instance 'sb-bsd-sockets:inet-socket :type :stream :protocol :tcp)))
     (setf (sb-bsd-sockets:sockopt-tcp-nodelay socket)   t
-	  (sb-bsd-sockets:sockopt-reuse-address socket) t)
+          (sb-bsd-sockets:sockopt-reuse-address socket) t)
     (sb-bsd-sockets:socket-bind socket #(127 0 0 1) port)
     (sb-bsd-sockets:socket-listen socket 3)
-    (let ((stream (sb-bsd-sockets:socket-make-stream (accept socket) :input t :output t :element-type :default))
-	  (stream2 (sb-bsd-sockets:socket-make-stream (accept socket) :input t :output t :element-type :default)))
-      (when telnet2character-mode
-	(loop for x in '(255 253 34 255 251 1) do (write-byte x stream)) ; switch telnet to character mode
-	(loop for x in '(255 253 34 255 251 1) do (write-byte x stream2)) ; switch telnet to character mode
-	(finish-output stream)
-	(finish-output stream2))
-      (values stream stream2 socket))))
+
+    (let* ((client1 (accept socket))
+           (stream (sb-bsd-sockets:socket-make-stream client1 :input t :output t :element-type :default)))
+      (format t "~&Agent 1 connected.~%")
+
+      (let* ((client2 (accept socket))
+             (stream2 (sb-bsd-sockets:socket-make-stream client2 :input t :output t :element-type :default)))
+        (format t "~&Agent 2 connected.~%")
+
+        (when telnet2character-mode
+          (loop for x in '(255 253 34 255 251 1) do (write-byte x stream))  ; agent 1
+          (loop for x in '(255 253 34 255 251 1) do (write-byte x stream2)) ; agent 2
+          (finish-output stream)
+          (finish-output stream2))
+
+        (values stream stream2 socket)))))
+
 
 (defun slurp-input (input-stream)
   "swallows all pending data"
