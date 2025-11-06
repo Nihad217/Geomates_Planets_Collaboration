@@ -15,42 +15,64 @@ Agents are controlled via key codes for a (left), d (right), w (jump, disc only)
 To make the game controllable by Telnet, telnet has to be switched into byte mode such that keypresses are send immediately. The game server will do so automatically, causing some protocol traffic the gameserver will however treat as control attempts. This is why telnet clients will receive lots of responses, although no key has been pressed.  
 
 ## Requirements
-The game requires a 3.x version of the box2d library to be installed. As of 2025, 2.x versions are still widely shipped with package management systems. These are incompatible with 3.x versions and will not work! Therefore, [download the original](https://github.com/erincatto/box2d) repository and build the library yourself. In case your package manager provides a 3.x library, you may of course use that.
+[SBCL](https://sbcl.org) as LISP compiler is required. If you have ACT-R installed, you probably already have SBCL.
 
-Additionally, [SBCL](https://sbcl.org) as LISP compiler is required. If you have ACT-R installed, you probably already have SBCL.
+An overview over the architecture is shown here:
+![alt text](overview_architecture.png)
 
-Alternatively, you may use the provided Dockerfile to run the game in a virtual environment (tested only on machines with x86 processor).
+## Installation game server
+The game server can either be installed via docker (recommend) or be build from scratch.
+### Docker (recommend)
+(tested only on machines with x86 processor)
+Download [Docker](https://www.docker.com) and use the provided Dockerfile to build the game environment by <pre><code>docker build -t geomates:latest .</code></pre>
+(this may take a while, but is only required once). Note that you cannot provide own levels or change game parameters unless you modify the Docker container.
 
-### Docker
-Download [Docker](https://www.docker.com) and use the provided Dockerfile to build the game environment by <pre><code>docker build -t geomates:latest .</code></pre> (this may take a while, but is only required once). Then use <pre><code>docker run -p 8000:8000 -p 45678:45678 geomates:latest sbcl --script geomates.lisp</code></pre> to run the game. Note that you cannot provide own levels or change game parameters unless you modify the Docker container.
+### Building game sever from scratch 
 
-### Windows using MSVC
-Follow the instructions for building below but use the Windows specific Makefile provided for building the library (thanks, Jendrik!). Note that you must adopt the path names inside the Makefile!
+First install a 3.1.x (recommend 3.1.1) version of the box2d library. As of 2025, 2.x versions are still widely shipped with package management systems. These are incompatible with 3.1.x versions and will not work! Therefore, [download the original](https://github.com/erincatto/box2d) repository and build the library yourself. In case your package manager provides a 3.1.x library, you may of course use that.
 
-Note that Telnet is usually shipped with Windows, but it requires extra steps to activate it.
+Only a single dynamic liberary (wrapper.dll/so/dylib) needs to be build that wraps around box2d's static library. To do so, edit the Makefile to adjust the paths to where box2s include files and the static library can be found (box2d does not need to be installed system-wide).
 
-### Linux
-Just follow the instructions for building below. In case you don't have clang installed, change the compiler to gcc in the Makefile.
+**Windows using MSVC**: For Windows use the Windows specific Makefile provided for building the library (thanks, Jendrik!). Note that you must adopt the path names inside the Makefile!
 
-### MacOS
-Just follow the instructions for building below. Make sure to have developer tools installed. You can install telnet using [homebrew](https://brew.sh): <pre><code>brew install telnet</code></pre>
+## Running the game server 
 
-## Building
-Only a single dynamic liberary needs to be build that wraps around box2d's static library. To do so, edit the Makefile to adjust the paths to where box2s include files and the static library can be found (box2d does not need to be installed system-wide).
-
-## Running the game
+If you build the docker, use: 
+ <pre><code>docker run -p 8000:8000 -p 45678:45678 geomates:latest sbcl --script geomates.lisp</code></pre>
+ 
+Otherwise use:
 ```sbcl --script geomates.lisp```
 
-Then, open viewer.html in a web browser and start your agents. Once both agents have connected, the game starts. It ends when all levels have been played. The list of levels is loaded from levels.lisp.
+Then, open **viewer.html** in a web browser and start your agents. Once both agents have connected, the game starts. It ends when all levels have been played. The list of levels is loaded from levels.lisp.
+
+
+## Connecting with Telnet (Manual Control)
+**Linux** Telnet should be already installed. Otherwise install it via your PackageManger
+
+**Windows:** Telnet is usually shipped with Windows, but it requires extra steps to activate it. [Activating Telnet under windows ](https://blog.mrkeyshop.com/en/guides/how-to-enable-and-use-telnet-on-windows-11-and-10/) or use a telnet client (e.g PuttyTel)
+
+**MacOs:**  You can install telnet using [homebrew](https://brew.sh):  brew install telnet
+
+Connect to the gameserver:
+```
+telnet localhost 45678
+```
+
+Don't forget to switch telnet into byte mode, so that keypresses are send immediately (if it isn't automatically recognized)
+
 
 ## Connecting with ACT-R
 
 Assuming [ACT-R Sources](http://act-r.psy.cmu.edu/actr7.x/actr7.x.zip)  (actr7.x) are [compiled](http://act-r.psy.cmu.edu/actr7.x/QuickStart.txt) and in the same folder as the geomates folder run:
 
-Start Geomates i.e. ``docker run -p 8000:8000 -p 45678:45678 geomates:latest sbcl --script geomates.lisp``
+Start Geomates server i.e. ``docker run -p 8000:8000 -p 45678:45678 geomates:latest sbcl --script geomates.lisp``
 
 ```
 sbcl --load "actr7.x/load-act-r.lisp" --load "geomates/act-r-experiment.lisp" --eval '(load-act-r-model "geomates/model-dummy.lisp")'
+```
+When running in the Windows CommandPrompt you may escape the quotation marks differently:
+```
+sbcl --load "actr7.x/load-act-r.lisp" --load "geomates/act-r-experiment.lisp" --eval "(load-act-r-model \"geomates/model-dummy.lisp\")"
 ```
 
 to start the agent evaluate `(geomates-experiment)` in the ACT-R REPL to get into the ACT-R GUI Environemnt `(run-environment)`.
