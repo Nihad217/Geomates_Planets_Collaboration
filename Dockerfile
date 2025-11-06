@@ -4,8 +4,6 @@ FROM ubuntu:latest
 # Set the working directory
 WORKDIR /usr/src/app
 
-ARG BOX2D_PATH=/Users/diedrich/Software/box2d
-
 # Install dependencies
 RUN apt-get update && \
     apt-get install -y \
@@ -36,8 +34,9 @@ RUN apt-get update && \
     build-essential \
     wget 
 
- 
-RUN git clone https://github.com/erincatto/box2d.git
+
+RUN git clone --branch v3.1.1 --depth 1 https://github.com/erincatto/box2d.git
+# RUN git clone https://github.com/erincatto/box2d.git
 # HOTFIX 1: Fix the CMakeLists.txt file to not build the samples
 RUN sed -i 's/option(BOX2D_SAMPLES "Build the Box2D samples" ON)/option(BOX2D_SAMPLES "Build the Box2D samples" OFF)/g' /usr/src/app/box2d/CMakeLists.txt
 RUN cd  /usr/src/app/box2d && \
@@ -47,6 +46,7 @@ RUN cd  /usr/src/app/box2d && \
 RUN apt install -y sbcl clang
     
 RUN git clone https://gitlab.isp.uni-luebeck.de/hai/geomates.git
+# COPY ../geomates /usr/src/app/geomates
 RUN cd geomates && \
     clang -I ../box2d/include -g -pedantic -Wall -fPIC -shared -Wl,--no-undefined -lm -o wrapper.so wrapper.c ../box2d/build/src/libbox2d.a
 

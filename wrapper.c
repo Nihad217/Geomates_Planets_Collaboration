@@ -356,7 +356,7 @@ int pointInRectPlayer(float x, float y) {
     posGlobal.y = y;
     b2Vec2 posLocal = b2InvTransformPoint (b2Body_GetTransform(gRectPlayer), posGlobal);
     b2Polygon rect = b2Shape_GetPolygon(gRectShapeID);
-    return b2PointInPolygon (&rect, posLocal);
+    return b2PointInPolygon (posLocal, &rect);
 }
 
 //
