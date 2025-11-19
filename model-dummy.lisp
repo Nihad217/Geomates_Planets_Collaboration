@@ -26,7 +26,7 @@
   (count #\Newline ; just count linebreaks since after printing a name, ls prints a newline
 	 (with-output-to-string (result) ; temporary string output stream
 	   (run-program (probe-file "/bin/ls") (list "/") :output result))))
-
+      
 ;;; In case you need to differentiate different environments/OS/compilers:
 ;;; have a look at Common-Lisps reader macros #+/#- (like #ifdef in C),
 ;;; which refer to the global variable *features*
@@ -55,42 +55,75 @@
   (set-visloc-default screen-x lowest)
 
   (chunk-type goal state intention)
-  (chunk-type control intention button)
+  (chunk-type control intention button speakname)
 
   (add-dm
+   (rect) (disc)
    (move-left) (move-right)
    (move-up)  (move-down)
    (w) (a) (s) (d)
    (i-dont-know-where-to-go)
    (something-should-change)
    (i-want-to-do-something)
-   (up-control isa control intention move-up button w)
-   (down-control isa control intention move-down button s)
-   (left-control isa control intention move-left button a)
-   (right-control isa control intention move-right button d)
+   (up-control    isa control intention move-up    button w speakname "move up")
+   (down-control  isa control intention move-down  button s speakname "move down")
+   (left-control  isa control intention move-left  button a speakname "move left")
+   (right-control isa control intention move-right button d speakname "move right")
    (first-goal isa goal state i-dont-know-where-to-go)
    )
 
   (goal-focus first-goal)
   
-  (p want-to-move
-     =goal>
-     state i-want-to-do-something
-     intention =intention
-     ?retrieval>
-     state free
+
+;; Detect und Identify sounds in the enviroment!
+
+   ;; Step 1: detect new audio event and move to aural buffer
+(p detected-sound-direct
+   =aural-location>
+     isa      audio-event
+     location =who
+   ?aural>
+     state    free
+   ==>
+   !output! ("I heard ~a~%" =who)
+   +aural>
+     isa      sound
+     event    =aural-location)
+
+
+   ;; Step 2: hear the sound and print it
+(p hear-direct
+   =aural>
+     isa     sound
+     content =x
+   ==>
+   !output! ("I heard say ~a~%" =x)
+   )
+
+
+(p want-to-move
+  =goal>
+    state i-want-to-do-something
+    intention =intention
+  ?retrieval>
+    state free
 ==>
-     =goal>
-     state something-should-change
-     +retrieval>
-        intention =intention
-     )
-  
+  =goal>
+    state something-should-change
+
+  ;; retrieve the control chunk that matches the intention
+  +retrieval>
+    isa control
+    intention =intention
+)
+
+
   (p move
      =goal>
      state something-should-change
      =retrieval>
      button =button
+     speakname =text
     ?manual>
      state free
  ==>
@@ -99,7 +132,11 @@
      +manual>
      cmd press-key
      key =button
-     )
+     +vocal>
+     isa speak
+     string =text
+   )
+     
 
   (p retrieval-failure
      =goal>

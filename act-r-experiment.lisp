@@ -49,10 +49,39 @@
 ;; sending messages to the other agent
 ;; messages need to be s-expressions or anything 'read'able by the lisp parser (lists, numbers, strings, etc.)
 ;; sticking to a well-defined language such as KQML/KIF is a good idea
+
 (defun send-message (msg)
   "sends a message (anyting printable, but should be an s-expression)"
+    ;; First send the letter m
+  (write-char #\m *gstream*)
   (format *gstream* "~w~a~a" msg #\Return #\Newline)
   (finish-output *gstream*))
+
+
+(defun handle-agent-message (target msg)
+  "Inject incoming agent messages into ACT-R's auditory module (proper ACT-R style)."
+
+  (let* (;; convert the rest into a natural sentence string
+         (words      (mapcar #'string-downcase
+                             (mapcar #'prin1-to-string (cddr msg))))
+         (sentence   (format nil "~{~a~^ ~}" words)))
+
+    ;; According to the ACT-R manual:
+    ;; new-word-sound WORD {onset {location}}
+    ;; Duration, detect-delay, recode-delay are automatically computed.
+    ;; 'external is the usual location for non-spatial sounds.
+    (cond
+      ((eq target :disc)
+       (new-word-sound sentence nil 'disc))
+
+      ((eq target :rect)
+       (new-word-sound sentence nil 'rect))
+
+      (t
+       (format t "~&[WARN] Unknown target: ~a~%" target)))
+
+    t))
+
 
 ;; function to be called by ACT-R to handle key presses by the model
 ;; keypress is send to gameserver and updated scene is read back and inserted into visicon
@@ -73,6 +102,12 @@
       (delete-all-visicon-features) ; reset visicon
       (loop for (what . attributes) in updated-scene do
 	    (case what
+        (msg->rect
+          (let ((msg (first attributes)))
+            (handle-agent-message :rect msg)))
+        (msg->disc
+            (let ((msg (first attributes)))
+              (handle-agent-message :disc msg)))
 	      (:level (let ((the-level (first attributes)))
 			(unless (equal *current-level* the-level)
 			  (setf *new-level* t
@@ -150,6 +185,11 @@
                        "Assignment 2 task output-key monitor")
     (monitor-act-r-command "output-key" "geomates-key-press")
 
+    (add-act-r-command "relay-speech-output" 'relay-speech-output "Handle player speak actions")
+    (monitor-act-r-command "output-speech" "relay-speech-output")
+    (install-device '("speech" "microphone"))
+    
+
     ;; run the model!
     (if human
 	(add-text-to-exp-window window "human not allowed here, use telnet" :x 100 :y 70)
@@ -163,12 +203,31 @@
 					; seconds in real-time mode.
         
         (install-device window)
-        (run 30 t)))
+        (run 60 t)))
     
 	;; clean-up: remove hooks
 	(remove-act-r-command-monitor "output-key" "geomates-key-press")
 	(remove-act-r-command "geomates-key-press")
 
+  (remove-act-r-command-monitor "output-speech" "relay-speech-output")    
+  (remove-act-r-command "relay-speech-output")
 	t))
-    
 
+
+(defun relay-speech-output (model string)
+  ;(format t ">>> Model-Remote: ~a   Speech: ~a~%" model string)
+  "Send a speech event as a valid s-expression."
+  (let ((sexpr `(speech-event ,model ,string)))  ; create s-expression
+    (send-message sexpr)))                        ; send it
+
+
+
+
+
+
+(defun print-message ()
+  (format t ">>> Hello from a separate Lisp function!~%"))
+  
+;; (format t "Loading model-dummy.lisp from ~A~%" *load-truename*)
+;;(load-act-r-model
+;; (merge-pathnames "model-dummy.lisp" *load-truename*))

@@ -415,29 +415,49 @@
 					   (incf diamonds-rect))))
 				     
 				     ;; send current scene to anyone listening
-				     (let* ((*print-pretty* nil)
-					    (current-scene (format nil "((:RECT ~,2f ~,2f ~,2f ~,2f ~,4f ~d)(:DISC ~,2f ~,2f ~,2f ~d)~a~a~{~w~}~{~w~}(:LEVEL ~d))"
-								  rect-pos-x rect-pos-y rect-width rect-height rect-rotation diamonds-rect
-								  disc-pos-x disc-pos-y +disc-radius+ diamonds-disc
-								  (if message-from-disc
-								      (list :msg->rect message-from-disc)
-								      "")
-								  (if message-from-rect
-								      (list :msg->disc message-from-rect)
-								      "")
-								  diamonds platforms level-count))) 
-				       (when *gui-connected?* ; to GUI (if one is connected)
-					 (sb-concurrency:enqueue current-scene *gui-view-queue*))
-				       (when rect-listens? ; to rect agent if it has send some command
-					 (write-line  current-scene rect-agent-stream)
-					 (finish-output rect-agent-stream)
-					 (setq rect-listens? nil
-					       message-from-disc nil))
-				       (when disc-listens? ; to disc agent if it has send some command
-					 (write-line  current-scene disc-agent-stream)
-					 (finish-output disc-agent-stream)
-					 (setq disc-listens? nil
-					       message-from-rect nil)))
+					;; send current scene to agents (respecting message direction)
+					(when rect-listens?
+					;; Build the scene for RECT (only include :msg->rect)
+					(let* ((*print-pretty* nil)
+							(scene-list
+							(append
+							(list
+								(list :RECT rect-pos-x rect-pos-y rect-width rect-height rect-rotation diamonds-rect)
+								(list :DISC disc-pos-x disc-pos-y +disc-radius+ diamonds-disc))
+							diamonds
+							platforms
+							;; Insert message for RECT only
+							(if message-from-disc
+								(list (list :msg->rect message-from-disc))
+								nil)
+							(list (list :LEVEL level-count))))
+							(scene-for-rect (format nil "~a" scene-list)))
+						(write-line scene-for-rect rect-agent-stream)
+						(finish-output rect-agent-stream)
+						(setq rect-listens? nil
+							message-from-disc nil)))
+
+					(when disc-listens?
+					;; Build the scene for DISC (only include :msg->disc)
+					(let* ((*print-pretty* nil)
+							(scene-list
+							(append
+							(list
+								(list :RECT rect-pos-x rect-pos-y rect-width rect-height rect-rotation diamonds-rect)
+								(list :DISC disc-pos-x disc-pos-y +disc-radius+ diamonds-disc))
+							diamonds
+							platforms
+							;; Insert message for DISC only
+							(if message-from-rect
+								(list (list :msg->disc message-from-rect))
+								nil)
+							(list (list :LEVEL level-count))))
+							(scene-for-disc (format nil "~a" scene-list)))
+						(write-line scene-for-disc disc-agent-stream)
+						(finish-output disc-agent-stream)
+						(setq disc-listens? nil
+							message-from-rect nil)))
+
 				     ;; handling requests from GUI
 				     (unless (sb-concurrency:queue-empty-p *gui-command-queue*)
 				       (let ((command (sb-concurrency:dequeue *gui-command-queue*)))
