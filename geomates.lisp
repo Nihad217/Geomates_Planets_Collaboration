@@ -154,7 +154,7 @@
   (let ((socket (make-instance 'sb-bsd-sockets:inet-socket :type :stream :protocol :tcp)))
     (setf (sb-bsd-sockets:sockopt-tcp-nodelay socket)   t
           (sb-bsd-sockets:sockopt-reuse-address socket) t)
-    (sb-bsd-sockets:socket-bind socket #(127 0 0 1) port)
+    (sb-bsd-sockets:socket-bind socket #(0 0 0 0) port)
     (sb-bsd-sockets:socket-listen socket 3)
 
     (let* ((client1 (accept socket))
@@ -213,7 +213,7 @@
   (let ((socket (make-instance 'sb-bsd-sockets:inet-socket :type :stream :protocol :tcp)))
     (setf (sb-bsd-sockets:sockopt-tcp-nodelay socket)   t
 	  (sb-bsd-sockets:sockopt-reuse-address socket) t)
-    (sb-bsd-sockets:socket-bind socket #(127 0 0 1) port)
+    (sb-bsd-sockets:socket-bind socket #(0 0 0 0) port)
     (loop while *gui-running?* finally (sb-bsd-sockets:socket-close socket) do
       (setf *gui-connected?* nil)
       (sb-bsd-sockets:socket-listen socket 3)
@@ -414,7 +414,20 @@
 					   (setq diamonds (delete d diamonds))
 					   (incf diamonds-rect))))
 				     
-				     ;; send current scene to anyone listening
+    				 (when *gui-connected?*
+    				   (let* ((*print-pretty* nil)
+    				          (base-scene
+    				            (append
+    				             (list
+    				              (list :RECT rect-pos-x rect-pos-y rect-width rect-height rect-rotation diamonds-rect)
+    				              (list :DISC disc-pos-x disc-pos-y +disc-radius+ diamonds-disc))
+    				             diamonds
+    				             platforms
+    				             (list (list :LEVEL level-count))))
+    				          (scene-for-gui (format nil "~a" base-scene)))
+    				     (sb-concurrency:enqueue scene-for-gui *gui-view-queue*)))
+
+				    ;; send current scene to anyone listening
 					;; send current scene to agents (respecting message direction)
 					(when rect-listens?
 					;; Build the scene for RECT (only include :msg->rect)
