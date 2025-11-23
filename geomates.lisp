@@ -154,7 +154,7 @@
   (let ((socket (make-instance 'sb-bsd-sockets:inet-socket :type :stream :protocol :tcp)))
     (setf (sb-bsd-sockets:sockopt-tcp-nodelay socket)   t
           (sb-bsd-sockets:sockopt-reuse-address socket) t)
-    (sb-bsd-sockets:socket-bind socket #(0 0 0 0) port)
+    (sb-bsd-sockets:socket-bind socket #(127 0 0 1) port)
     (sb-bsd-sockets:socket-listen socket 3)
 
     (let* ((client1 (accept socket))
@@ -213,7 +213,7 @@
   (let ((socket (make-instance 'sb-bsd-sockets:inet-socket :type :stream :protocol :tcp)))
     (setf (sb-bsd-sockets:sockopt-tcp-nodelay socket)   t
 	  (sb-bsd-sockets:sockopt-reuse-address socket) t)
-    (sb-bsd-sockets:socket-bind socket #(0 0 0 0) port)
+    (sb-bsd-sockets:socket-bind socket #(127 0 0 1) port)
     (loop while *gui-running?* finally (sb-bsd-sockets:socket-close socket) do
       (setf *gui-connected?* nil)
       (sb-bsd-sockets:socket-listen socket 3)
