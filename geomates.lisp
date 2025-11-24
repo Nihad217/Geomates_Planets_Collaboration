@@ -369,7 +369,7 @@
 					 (100 (moveDiscPlayer +5.0f0)) ; d
 					 (119 (jumpDiscPlayer +disc-force+)) ; w
 					 ;; messages get appended in order to make sure they will be delivered, not overridded by a newly received one. To this end,  message-from-disc gets reset to NIL after delivery to rect agent further below
-					 (109 (setq message-from-disc (append message-from-disc (read disc-agent-stream nil nil nil)))) ; m(...)
+					 (109 (setq message-from-disc (append message-from-disc (list (read disc-agent-stream nil nil nil))))) ; m(...)
 					 (113 (setq disc-aborts? t))))) ; q
 				   
 				   ;; attend to rect agent
@@ -383,7 +383,7 @@
 					 (100 (moveRectPlayer +rect-force+)) ; d
 					 (115 (transformRectPlayer +0.1f0)) ; s
 					 (119 (transformRectPlayer -0.1f0)) ; w
-					 (109 (setq message-from-rect (append message-from-rect (read rect-agent-stream nil nil nil)))) ; m(...) see note on messages above
+					 (109 (setq message-from-rect (append message-from-rect (list (read rect-agent-stream nil nil nil))))) ; m(...) see note on messages above
 					 (113 (setq rect-aborts? t))))) ; q
 				   ;; step simulation and post updates to agents
 				   (let (disc-pos-x disc-pos-y rect-pos-x rect-pos-y rect-rotation rect-width rect-height)

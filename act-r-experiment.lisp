@@ -103,11 +103,13 @@
       (loop for (what . attributes) in updated-scene do
 	    (case what
         (msg->rect
-          (let ((msg (first attributes)))
-            (handle-agent-message :rect msg)))
+          (let ((messages (first attributes)))
+            (dolist (msg messages)
+              (handle-agent-message :rect msg))))
         (msg->disc
-            (let ((msg (first attributes)))
-              (handle-agent-message :disc msg)))
+            (let ((messages (first attributes)))
+              (dolist (msg messages)
+                (handle-agent-message :disc msg))))
 	      (:level (let ((the-level (first attributes)))
 			(unless (equal *current-level* the-level)
 			  (setf *new-level* t
