@@ -123,13 +123,13 @@ void worldInsertPlatform(float px, float py, float sx, float sy) {
     b2BodyDef bodyDef = b2DefaultBodyDef();
     bodyDef.type = b2_staticBody;
     b2Vec2 position;
-    position.x = 0.5*(px+sx);
-    position.y = 0.5*(py+sy);
+    position.x = 0.5f*(px+sx);
+    position.y = 0.5f*(py+sy);
     bodyDef.position = position;
 
     b2BodyId platformId = b2CreateBody(gWorldID, &bodyDef);
 
-    b2Polygon dBox = b2MakeBox(0.5*fabsf(sx-px),0.5*fabsf(sy-py));
+    b2Polygon dBox = b2MakeBox(0.5f*fabsf(sx-px),0.5f*fabsf(sy-py));
     b2ShapeDef shapeDef = b2DefaultShapeDef();
     shapeDef.density = 1.0f;
     shapeDef.material.friction = 0.3f;
@@ -239,7 +239,7 @@ void moveRectPlayer(float f) {
         float boxW, boxH;
         setRectWidthHeight(&boxW, &boxH);
         tmpPose.position = b2Body_GetPosition(gRectPlayer);
-        tmpPose.position.y -= 0.5*boxH;
+        tmpPose.position.y -= 0.5f*boxH;
         b2Vec2 impulse;
         impulse.x = f;
         impulse.y = 0.0f;
@@ -318,16 +318,17 @@ void transformRectPlayer(float step) {
     obstacles.top = 0;
     obstacles.bottom = 0;
 
+    // calculate the AABB for the rotated box
     b2AABB aabb;
-    float halfWidth = w / 2.0f;
-    float halfHeight = h / 2.0f;
-
-    aabb.lowerBound.x = - halfWidth;
-    aabb.lowerBound.y = - halfHeight;
-    aabb.upperBound.x = + halfWidth;
-    aabb.upperBound.y = + halfHeight;
-
-
+    float c = fabsf(cosf(rot));
+    float s = fabsf(sinf(rot));
+    float hx = c * w + s * h;
+    float hy = s * w + c * h;
+    
+    aabb.lowerBound.x = obstacles.pos.x - hx;
+    aabb.lowerBound.y = obstacles.pos.y - hy;
+    aabb.upperBound.x = obstacles.pos.x + hx;
+    aabb.upperBound.y = obstacles.pos.y + hy;
 
     b2World_OverlapAABB(
         gWorldID,
@@ -356,7 +357,7 @@ int pointInRectPlayer(float x, float y) {
     posGlobal.y = y;
     b2Vec2 posLocal = b2InvTransformPoint (b2Body_GetTransform(gRectPlayer), posGlobal);
     b2Polygon rect = b2Shape_GetPolygon(gRectShapeID);
-    return b2PointInPolygon (posLocal, &rect);
+    return b2PointInPolygon (&rect, posLocal);
 }
 
 //

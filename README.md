@@ -35,6 +35,14 @@ Only a single dynamic liberary (wrapper.dll/so/dylib) needs to be build that wra
 
 **Windows using MSVC**: For Windows use the Windows specific Makefile provided for building the library (thanks, Jendrik!). Note that you must adopt the path names inside the Makefile!
 
+To compile the wrapper DLL:
+1. Open "Tools for Command Prompt VStudio x64" (or a similar VS Native Tools Command Prompt).
+2. Navigate to the `geomates` directory.
+3. Run the following command to build the DLL using the Makefile_Windows (rename it to just Makefile):
+   ```cmd
+   nmake /a
+   ```
+
 ## Running the game server 
 
 If you build the docker, use: 
