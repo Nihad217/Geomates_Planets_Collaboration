@@ -29,7 +29,7 @@ Download [Docker](https://www.docker.com) and use the provided Dockerfile to bui
 
 ### Building game sever from scratch 
 
-First install a 3.1.x (recommend 3.1.1) version of the box2d library. As of 2025, 2.x versions are still widely shipped with package management systems. These are incompatible with 3.1.x versions and will not work! Therefore, [download the original](https://github.com/erincatto/box2d) repository and build the library yourself. In case your package manager provides a 3.1.x library, you may of course use that.
+First install a 3.1.1 version of the box2d library. As of 2025, 2.x versions are still widely shipped with package management systems. These are incompatible with 3.1.1 versions and will not work! Therefore, [download the original](https://github.com/erincatto/box2d) repository and build the library yourself. In case your package manager provides a 3.1.1 library, you may of course use that.
 
 Only a single dynamic liberary (wrapper.dll/so/dylib) needs to be build that wraps around box2d's static library. To do so, edit the Makefile to adjust the paths to where box2s include files and the static library can be found (box2d does not need to be installed system-wide).
 
