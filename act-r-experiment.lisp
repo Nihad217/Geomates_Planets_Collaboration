@@ -41,22 +41,13 @@
 	(progn
           (sb-bsd-sockets:socket-connect *socket* *geomates-host* *geomates-port*)
           (format t "Socket connected~%")
-          (setf *gstream* (sb-bsd-sockets:socket-make-stream *socket* :input t :output t :element-type 'character)))
+         (setf *gstream* (sb-bsd-sockets:socket-make-stream *socket* :input t :output t :element-type :default))
+          ;; consume telnet negotiation (6 bytes)
+          (dotimes (i 6)
+            (read-byte *gstream*)))
       (error (e)
 	(format *error-output* "Error: Failed to connect - ~a~%" e)
 	(setf *socket* nil *gstream* nil)))))
-
-;; sending messages to the other agent
-;; messages need to be s-expressions or anything 'read'able by the lisp parser (lists, numbers, strings, etc.)
-;; sticking to a well-defined language such as KQML/KIF is a good idea
-
-(defun send-message (msg)
-  "sends a message (anyting printable, but should be an s-expression)"
-    ;; First send the letter m
-  (write-char #\m *gstream*)
-  (format *gstream* "~w~a~a" msg #\Return #\Newline)
-  (finish-output *gstream*))
-
 
 (defun handle-agent-message (target msg)
   "Inject incoming agent messages into ACT-R's auditory module (proper ACT-R style)."
@@ -82,18 +73,8 @@
 
     t))
 
-
-;; function to be called by ACT-R to handle key presses by the model
-;; keypress is send to gameserver and updated scene is read back and inserted into visicon
-(defun respond-to-key-press (model key)
-  "forward key presses to game server and update visual buffer"
-  (declare (optimize (safety 3) (debug 3)) (ignore model))
-  ;; send data
-  (ensure-connection)
-  (clear-input *gstream*)
-  (format *gstream* key)
-  (finish-output *gstream*)
-  ;; read updated scene
+(defun read-and-update-from-server ()
+  "Reads the updated scene from the server and updates the visicon."
   (multiple-value-bind (updated-scene err) (ignore-errors (read *gstream* nil nil nil))
     (when err
       (format *error-output* "~&error reading from game server (err: ~w).~%" err))
@@ -136,8 +117,8 @@
 						   radius ,radius
 						   diamonds ,diamonds))))
 	      
-	  (:rect (destructuring-bind (x y width height rotation diamonds) attributes
-		   (add-visicon-features 
+	      (:rect (destructuring-bind (x y width height rotation diamonds) attributes
+		       (add-visicon-features 
 		    `(isa (polygon-feature polygon)
 			  screen-x ,x
 			  screen-y ,y
@@ -147,6 +128,45 @@
 			  rotation ,rotation
 			  diamonds ,diamonds
 			  color red regular (true nil) sides (nil 4))))))))))
+
+;; sending messages to the other agent
+;; messages need to be s-expressions or anything 'read'able by the lisp parser (lists, numbers, strings, etc.)
+;; sticking to a well-defined language such as KQML/KIF is a good idea
+
+(defun send-message (msg)
+  "sends a message (anyting printable, but should be an s-expression)"
+  (ensure-connection)
+  (clear-input *gstream*)
+  ;; First send the letter m
+  (write-char #\m *gstream*)
+  (format *gstream* "~w~a~a" msg #\Return #\Newline)
+  (finish-output *gstream*)
+  (read-and-update-from-server))
+
+;; function to be called by ACT-R to handle key presses by the model
+;; keypress is send to gameserver and updated scene is read back and inserted into visicon
+(defun respond-to-key-press (model key)
+  "forward key presses to game server and update visual buffer"
+  (declare (optimize (safety 3) (debug 3)) (ignore model))
+  ;; send data
+  (ensure-connection)
+  (clear-input *gstream*)
+  (format *gstream* key)
+  (finish-output *gstream*)
+  ;; read updated scene
+  (read-and-update-from-server))
+
+(defun poll-game-server ()
+  "Polls the game server for updates."
+  (when (and *gstream* (open-stream-p *gstream*))
+    ;; Send a space as a no-op keep-alive/poll
+    (format *gstream* " ") 
+    (finish-output *gstream*)
+    (read-and-update-from-server)))
+
+(defun start-polling ()
+  "Starts the periodic polling of the game server to update the visicon and get new messages from the server."
+  (schedule-periodic-event 1 'poll-game-server :details "Game Server Polling" :maintenance t))
 
 (defun geomates-experiment (&optional human)
   (declare (optimize (debug 3) (safety 3)))
@@ -205,6 +225,8 @@
 					; seconds in real-time mode.
         
         (install-device window)
+        (start-polling)
+        ;; TIME TO RUN THE ACT-R MODEL (Change this to run longer or shorter)
         (run 60 t)))
     
 	;; clean-up: remove hooks
@@ -225,10 +247,8 @@
 
 
 
-
-
-(defun print-message ()
-  (format t ">>> Hello from a separate Lisp function!~%"))
+;;(defun print-message ()
+;;  (format t ">>> Hello from a separate Lisp function!~%"))
   
 ;; (format t "Loading model-dummy.lisp from ~A~%" *load-truename*)
 ;;(load-act-r-model
