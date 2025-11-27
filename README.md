@@ -14,11 +14,15 @@ Agents are controlled via key codes for a (left), d (right), w (jump, disc only)
 
 To make the game controllable by Telnet, telnet has to be switched into byte mode such that keypresses are send immediately. The game server will do so automatically, causing some protocol traffic the gameserver will however treat as control attempts. This is why telnet clients will receive lots of responses, although no key has been pressed.  
 
+The next level starts when either all diamonds are collected or the "s"/"skip" message is send from GUI. The next level doesn't automatically resets the ACT-R model.
+
 ## Requirements
 [SBCL](https://sbcl.org) as LISP compiler is required. If you have ACT-R installed, you probably already have SBCL.
 
 An overview over the architecture is shown here:
 ![alt text](overview_architecture.png)
+
+The example code for the Planner (Python) will follow soon. 
 
 ## Installation game server
 The game server can either be installed via docker (recommend) or be build from scratch.
