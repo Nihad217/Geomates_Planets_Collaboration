@@ -41,6 +41,12 @@
 
 (define-model lost-agent
 
+  ;; ACT-R parameters to choose production rules randomly if more than one is matched 
+  (sgp :egs 0.2)
+  (sgp :ans 0.5 :lf 0.2)
+  (sgp :esc t)
+
+
   ;; [find explanation in actr7.x/examples/vision-module]
   (chunk-type (polygon-feature (:include visual-location)) regular)
   (chunk-type (polygon (:include visual-object)) sides)
@@ -75,29 +81,31 @@
   (goal-focus first-goal)
   
 
-;; Detect und Identify sounds in the enviroment!
 
-   ;; Step 1: detect new audio event and move to aural buffer
-(p detected-sound-direct
+;; Detect und Identify sounds in the enviroment!
+;; Step 1: detect new audio event and move to aural buffer
+(p detected-sound
    =aural-location>
      isa      audio-event
      location =who
    ?aural>
      state    free
    ==>
-   !output! ("I heard ~a~%" =who)
    +aural>
      isa      sound
-     event    =aural-location)
+     event    =aural-location
+   +imaginal>
+     heard    =who)
 
-
-   ;; Step 2: hear the sound and print it
-(p hear-direct
+;; Step 2: hear the sound and print it
+(p hear
    =aural>
      isa     sound
      content =x
+   =imaginal>
+     heard   =who
    ==>
-   !output! ("I heard say ~a~%" =x)
+   !output! ("I heard ~a say: ~a~%" =who =x)
    )
 
 
@@ -118,6 +126,7 @@
 )
 
 
+;; Move in direction and vocalize direction
   (p move
      =goal>
      state something-should-change
