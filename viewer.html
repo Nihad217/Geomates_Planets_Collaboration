@@ -1,219 +1,218 @@
 <!DOCTYPE html>
 <html lang="en-US">
- 
+
 <head>
     <meta charset="UTF-8">
     <title>GeoMates</title>
 </head>
- 
-<body>
-  <h1 align="center">GeoMates</h1>
-  <h4>diamonds collected</h4>
-  rectangle:<div id="drect"></div><br>
-  disc:<div id="ddisc"></div><br>
-  <div class="shape-container">
-  <div id="draw-shapes"></div>
-</div>
 
- <canvas id="myCanvas" width="800" height="400" style="border:1px solid black;">
- </canvas>
- 
-  
- <div class="container">
+<body>
+    <h1 align="center">GeoMates</h1>
+    <h4>diamonds collected</h4>
+    rectangle:<div id="drect"></div><br>
+    disc:<div id="ddisc"></div><br>
+    <div class="shape-container">
+        <div id="draw-shapes"></div>
+    </div>
+
+    <canvas id="myCanvas" width="800" height="400" style="border:1px solid black;">
+    </canvas>
+
+
+    <div class="container">
         <label>send message to game server:</label> <br><br>
         <input type="text" id="messageInput">
         <button onclick="sendMessage()">Send</button>
-	<br>
-	<h4>console messages:</h4>
+        <br>
+        <h4>console messages:</h4>
         <div id="output"></div>
     </div>
-  
 
- <script>
-   let scale = 10; // scaling of game coordinates to canvas
-   
-   function clear_canvas() {
-       const canvas = document.getElementById("myCanvas");
-       const ctx = canvas.getContext("2d");
-       ctx.fillStyle = "white";
-       ctx.fillRect(0,0,800,400);
-   }
 
-   // locates end of object descriptor in string
-   function find_obj_end(desc, start) {
-       let idx = start;
-       while (desc.charAt(idx)!=')') {
-	   idx++;
-       }
-       return idx;
-   }
+    <script>
+        let scale = 10; // scaling of game coordinates to canvas
 
-   // (:rect x y width height rotation #diamonds_collected)
-   function draw_rect(desc, idx) {
-       let end_idx = find_obj_end(desc,idx);
-       let args = ((desc.substring(idx,end_idx)).trim()).split(" ");
-       //console.log(args);
-       const canvas = document.getElementById("myCanvas");
-       const ctx = canvas.getContext("2d");
-       let x = scale*parseFloat(args[0]);
-       let y = scale*parseFloat(args[1]);
-       let wr = 0.5*scale*parseFloat(args[2]); // 'width radius'
-       let hr = 0.5*scale*parseFloat(args[3]); // 'height radius'
-       let r = parseFloat(args[4]);
-       let cos_r = Math.cos(r);
-       let sin_r = Math.sin(r);
-       ctx.fillStyle = "red";
-       ctx.beginPath();
-       // 4 corner points to be rotated around the center:
-       // (wr, hr) -> (wr, -hr) -> (-wr, -hr) -> (-wr, hr)
-       // rotation matrix:
-       // | cos  -sin |
-       // | sin   cos |
-       ctx.moveTo(x + cos_r*wr - sin_r*hr, y + sin_r*wr + cos_r*hr);
-       ctx.lineTo(x + cos_r*wr + sin_r*hr, y + sin_r*wr - cos_r*hr);
-       ctx.lineTo(x - cos_r*wr + sin_r*hr, y - sin_r*wr - cos_r*hr);
-       ctx.lineTo(x - cos_r*wr - sin_r*hr, y - sin_r*wr + cos_r*hr);
-       ctx.closePath();
-       ctx.fill();
-       ctx.lineWidth = 1;
-       ctx.strokeStyle = 'black';
-       ctx.stroke();
+        function clear_canvas() {
+            const canvas = document.getElementById("myCanvas");
+            const ctx = canvas.getContext("2d");
+            ctx.fillStyle = "white";
+            ctx.fillRect(0, 0, 800, 400);
+        }
 
-       (document.getElementById('drect')).innerHTML=args[5]; // diamonds collected
-       return end_idx;
-   }
+        // locates end of object descriptor in string
+        function find_obj_end(desc, start) {
+            let idx = start;
+            while (desc.charAt(idx) != ')') {
+                idx++;
+            }
+            return idx;
+        }
 
-   // (:disc x y radius #diamonds)
-   function draw_disc(desc, idx) {
-       let end_idx = find_obj_end(desc,idx);
-       let args = ((desc.substring(idx,end_idx)).trim()).split(" ");
-       //console.log(args);
-       const canvas = document.getElementById("myCanvas");
-       const ctx = canvas.getContext("2d");
-       let x = parseFloat(args[0]);
-       let y = parseFloat(args[1]);
-       ctx.fillStyle = "yellow";
-       ctx.beginPath();
-       ctx.arc(scale*x, scale*y, scale*parseFloat(args[2]), 0, 2 * Math.PI, false);
-       ctx.fill();
-       ctx.lineWidth = 2;
-       ctx.strokeStyle = 'black';
-       ctx.stroke();
-       //ctx.fillText(args[2],10,10);
-       (document.getElementById('ddisc')).innerHTML=args[3];
-       return end_idx;
-   }
+        // (:rect x y width height rotation #diamonds_collected)
+        function draw_rect(desc, idx) {
+            let end_idx = find_obj_end(desc, idx);
+            let args = ((desc.substring(idx, end_idx)).trim()).split(" ");
+            //console.log(args);
+            const canvas = document.getElementById("myCanvas");
+            const ctx = canvas.getContext("2d");
+            let x = scale * parseFloat(args[0]);
+            let y = scale * parseFloat(args[1]);
+            let wr = 0.5 * scale * parseFloat(args[2]); // 'width radius'
+            let hr = 0.5 * scale * parseFloat(args[3]); // 'height radius'
+            let r = parseFloat(args[4]);
+            let cos_r = Math.cos(r);
+            let sin_r = Math.sin(r);
+            ctx.fillStyle = "red";
+            ctx.beginPath();
+            // 4 corner points to be rotated around the center:
+            // (wr, hr) -> (wr, -hr) -> (-wr, -hr) -> (-wr, hr)
+            // rotation matrix:
+            // | cos  -sin |
+            // | sin   cos |
+            ctx.moveTo(x + cos_r * wr - sin_r * hr, y + sin_r * wr + cos_r * hr);
+            ctx.lineTo(x + cos_r * wr + sin_r * hr, y + sin_r * wr - cos_r * hr);
+            ctx.lineTo(x - cos_r * wr + sin_r * hr, y - sin_r * wr - cos_r * hr);
+            ctx.lineTo(x - cos_r * wr - sin_r * hr, y - sin_r * wr + cos_r * hr);
+            ctx.closePath();
+            ctx.fill();
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = 'black';
+            ctx.stroke();
 
-   // (:diamond x y)
-   function draw_diamond(desc, idx) {
-       let end_idx = find_obj_end(desc,idx);
-       let args = ((desc.substring(idx,end_idx)).trim()).split(" ");
+            (document.getElementById('drect')).innerHTML = args[5]; // diamonds collected
+            return end_idx;
+        }
 
-       const canvas = document.getElementById("myCanvas");
-       const ctx = canvas.getContext("2d");
-       let x = scale*parseFloat(args[0]);
-       let y = scale*parseFloat(args[1]);
-       ctx.fillStyle = "orange";
-       ctx.beginPath();
-       ctx.moveTo(x, y+10);
-       ctx.lineTo(x+10,y);
-       ctx.lineTo(x, y-10);
-       ctx.lineTo(x-10, y);
-       ctx.closePath();
-       ctx.fill();
-       ctx.lineWidth = 1;
-       ctx.strokeStyle = 'black';
-       ctx.stroke();
-       return end_idx;
-   }
+        // (:disc x y radius #diamonds)
+        function draw_disc(desc, idx) {
+            let end_idx = find_obj_end(desc, idx);
+            let args = ((desc.substring(idx, end_idx)).trim()).split(" ");
+            //console.log(args);
+            const canvas = document.getElementById("myCanvas");
+            const ctx = canvas.getContext("2d");
+            let x = parseFloat(args[0]);
+            let y = parseFloat(args[1]);
+            ctx.fillStyle = "yellow";
+            ctx.beginPath();
+            ctx.arc(scale * x, scale * y, scale * parseFloat(args[2]), 0, 2 * Math.PI, false);
+            ctx.fill();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = 'black';
+            ctx.stroke();
+            //ctx.fillText(args[2],10,10);
+            (document.getElementById('ddisc')).innerHTML = args[3];
+            return end_idx;
+        }
 
-   // (:platform x1 y1 x2 y2)
-   function draw_platform(desc, idx) {
-       let end_idx = find_obj_end(desc,idx);
-       let args = ((desc.substring(idx,end_idx)).trim()).split(" ");
-       const canvas = document.getElementById("myCanvas");
-       const ctx = canvas.getContext("2d");
-       ctx.fillStyle = "black";
-       let x1 = scale*parseFloat(args[0]);
-       let y1 = scale*parseFloat(args[1]);
-       let width = scale*parseFloat(args[2]) - x1;
-       let height = scale*parseFloat(args[3]) - y1;
-       ctx.fillRect(x1,y1,width,height);
-   return end_idx;
-   }
+        // (:diamond x y)
+        function draw_diamond(desc, idx) {
+            let end_idx = find_obj_end(desc, idx);
+            let args = ((desc.substring(idx, end_idx)).trim()).split(" ");
 
-   function draw_scene(scene) {
-       let len = scene.length;
-       clear_canvas();
-       //console.log(scene);
-       let idx = 1; // skip over ovening paranthesis
-       while (idx < len) {
-	   let c = scene.charAt(idx);
-	   if (c=='R') { // the rect
-	       idx = draw_rect(scene, idx+4);		  
-	   } else if (c == 'D') {
-	       if (scene.charAt(idx+2) == 'S') {
-		   idx = draw_disc(scene, idx+4);
-	       } else {
-		   idx = draw_diamond(scene, idx+7);
-	       }
-	   } else if (c == 'P') {
-	       idx = draw_platform(scene,idx+8);
-	   } else {
-	       idx++;
-	      }
-       }
-   }
+            const canvas = document.getElementById("myCanvas");
+            const ctx = canvas.getContext("2d");
+            let x = scale * parseFloat(args[0]);
+            let y = scale * parseFloat(args[1]);
+            ctx.fillStyle = "orange";
+            ctx.beginPath();
+            ctx.moveTo(x, y + 10);
+            ctx.lineTo(x + 10, y);
+            ctx.lineTo(x, y - 10);
+            ctx.lineTo(x - 10, y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = 'black';
+            ctx.stroke();
+            return end_idx;
+        }
 
-   const socket = new WebSocket('ws://localhost:8000');
-   
-   socket.onerror = function(event) {
-     const outputDiv = document.getElementById('output');
-	  // append a paragraph with the received message to the output div
-     outputDiv.innerHTML += `<p>Socket error.</p>`;		    
-     // alert('socket error');
-   }
-   
-   socket.onopen = function(event) {
-       const outputDiv = document.getElementById('output');
-	  // append a paragraph with the received message to the output div
-       outputDiv.innerHTML += `<p>Received <b>"${event.data}"</b> from server.</p>`;
-       //alert('You are Connected to WebSocket Server');
-       // Handle connection open
-   };
-   
-   socket.onmessage = function(event) {
-       draw_scene(event.data);
-   };
-   
-   socket.onclose = function(event) {
-     const outputDiv = document.getElementById('output');
-	  // append a paragraph with the received message to the output div
-     outputDiv.innerHTML += `<p>Disconnected from server.</p>`;		    
-       //alert(event.code); 	  // handle connection close
-   };
-   
-   function sendMessage() {
-       // Get the message input element
-       const messageInput = document.getElementById('messageInput');
-       // Get the value of the message input
-       const message = messageInput.value;
-       // Send the message to the WebSocket server
-       socket.send(message);
-       // Clear the message input
-       messageInput.value = '';
-   }
+        // (:platform x1 y1 x2 y2)
+        function draw_platform(desc, idx) {
+            let end_idx = find_obj_end(desc, idx);
+            let args = ((desc.substring(idx, end_idx)).trim()).split(" ");
+            const canvas = document.getElementById("myCanvas");
+            const ctx = canvas.getContext("2d");
+            ctx.fillStyle = "black";
+            let x1 = scale * parseFloat(args[0]);
+            let y1 = scale * parseFloat(args[1]);
+            let width = scale * parseFloat(args[2]) - x1;
+            let height = scale * parseFloat(args[3]) - y1;
+            ctx.fillRect(x1, y1, width, height);
+            return end_idx;
+        }
 
-   clear_canvas();
-   const canvas = document.getElementById("myCanvas");
-   const ctx = canvas.getContext("2d");
-   ctx.transform(1, 0, 0, -1, 0, canvas.height);
+        function draw_scene(scene) {
+            let len = scene.length;
+            clear_canvas();
+            //console.log(scene);
+            let idx = 1; // skip over ovening paranthesis
+            while (idx < len) {
+                let c = scene.charAt(idx);
+                if (c == 'R') { // the rect
+                    idx = draw_rect(scene, idx + 4);
+                } else if (c == 'D') {
+                    if (scene.charAt(idx + 2) == 'S') {
+                        idx = draw_disc(scene, idx + 4);
+                    } else {
+                        idx = draw_diamond(scene, idx + 7);
+                    }
+                } else if (c == 'P') {
+                    idx = draw_platform(scene, idx + 8);
+                } else {
+                    idx++;
+                }
+            }
+        }
 
-   //draw_scene("((:RECT 5.78 23.74 16.00 1.00 0.3479 0)(:DISC 11.55 10.59 1.00 0)(:DIAMOND 40 10)(:PLATFORM 0 0 80 1)(:PLATFORM 0 39 80 40)(:PLATFORM 0 1 1 40)(:PLATFORM 79 1 80 40)(:PLATFORM 1 20 30 21)(:PLATFORM 35 20 79 21))");
-   </script>
- 
+        const socket = new WebSocket('ws://localhost:8000');
+
+        socket.onerror = function (event) {
+            const outputDiv = document.getElementById('output');
+            // append a paragraph with the received message to the output div
+            outputDiv.innerHTML += `<p>Socket error.</p>`;
+            // alert('socket error');
+        }
+
+        socket.onopen = function (event) {
+            const outputDiv = document.getElementById('output');
+            // append a paragraph with the received message to the output div
+            console.log(event);
+            outputDiv.innerHTML += `<p>Connected to server.</p>`;
+            //alert('You are Connected to WebSocket Server');
+            // Handle connection open
+        };
+
+        socket.onmessage = function (event) {
+            draw_scene(event.data);
+        };
+
+        socket.onclose = function (event) {
+            const outputDiv = document.getElementById('output');
+            // append a paragraph with the received message to the output div
+            outputDiv.innerHTML += `<p>Disconnected from server.</p>`;
+            //alert(event.code); 	  // handle connection close
+        };
+
+        function sendMessage() {
+            // Get the message input element
+            const messageInput = document.getElementById('messageInput');
+            // Get the value of the message input
+            const message = messageInput.value;
+            // Send the message to the WebSocket server
+            socket.send(message);
+            // Clear the message input
+            messageInput.value = '';
+        }
+
+        clear_canvas();
+        const canvas = document.getElementById("myCanvas");
+        const ctx = canvas.getContext("2d");
+        ctx.transform(1, 0, 0, -1, 0, canvas.height);
+
+        //draw_scene("((:RECT 5.78 23.74 16.00 1.00 0.3479 0)(:DISC 11.55 10.59 1.00 0)(:DIAMOND 40 10)(:PLATFORM 0 0 80 1)(:PLATFORM 0 39 80 40)(:PLATFORM 0 1 1 40)(:PLATFORM 79 1 80 40)(:PLATFORM 1 20 30 21)(:PLATFORM 35 20 79 21))");
+    </script>
+
 </body>
 
 </html>
-
-
