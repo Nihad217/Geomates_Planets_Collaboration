@@ -64,10 +64,10 @@
   (chunk-type control intention button speakname)
 
   (add-dm
-   (rect) (disc)
+   (rect) (disc) (heard)
    (move-left) (move-right)
    (move-up)  (move-down)
-   (w) (a) (s) (d)
+   (w) (a) (s) (d) 
    (i-dont-know-where-to-go)
    (something-should-change)
    (i-want-to-do-something)
