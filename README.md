@@ -22,7 +22,7 @@ The next level starts when either all diamonds are collected or the "s"/"skip" m
 An overview over the architecture is shown here:
 ![alt text](overview_architecture.png)
 
-The example code for the Planner (Python) will follow soon. 
+An Tutorial for the Planner/RPC can be found in the moodle.
 
 ## Installation game server
 The game server can either be installed via docker (recommend) or be build from scratch.
