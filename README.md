@@ -79,7 +79,7 @@ Assuming [ACT-R Sources](http://act-r.psy.cmu.edu/actr7.x/actr7.x.zip)  (actr7.x
 
 Start Geomates server i.e. ``docker run -p 8000:8000 -p 45678:45678 geomates:latest sbcl --script geomates.lisp``
 
-You need two start two agents, so that the agent can begin.
+You need two start two agents (two commands), so that the game can begin.
 These commands are execute one the folder above the geomates folder: 
 ```
 sbcl --load "actr7.x/load-act-r.lisp" --load "geomates/act-r-experiment.lisp" --eval '(load-act-r-model "geomates/model-dummy.lisp")'
