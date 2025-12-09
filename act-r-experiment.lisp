@@ -81,7 +81,8 @@
     (when (consp updated-scene)
       (format *standard-output* "~&installing scene in visicon, scene: ~w~%" updated-scene)
       (delete-all-visicon-features) ; reset visicon
-      (loop for (what . attributes) in updated-scene do
+      (loop for (what-raw . attributes) in updated-scene
+            for what = (if (keywordp what-raw) what-raw (intern (string-upcase (string what-raw)) :keyword)) do
 	    (case what
         (msg->rect
           (let ((messages (first attributes)))
@@ -107,7 +108,8 @@
 	      (:diamond (destructuring-bind (x y) attributes
 			  (add-visicon-features `(isa (polygon-feature polygon) 
 						      screen-x ,x screen-y ,y
-						      value (polygon "diamond")))))
+						      value (polygon "diamond")
+                  color orange))))
 	      
 	      (:disc (destructuring-bind (x y radius diamonds) attributes
 		       (add-visicon-features `(isa oval
@@ -115,7 +117,8 @@
 						   screen-y ,y
 						   value (oval "disc")
 						   radius ,radius
-						   diamonds ,diamonds))))
+						   diamonds ,diamonds
+               color yellow))))
 	      
 	      (:rect (destructuring-bind (x y width height rotation diamonds) attributes
 		       (add-visicon-features 
@@ -227,7 +230,7 @@
         (install-device window)
         (start-polling)
         ;; TIME TO RUN THE ACT-R MODEL (Change this to run longer or shorter)
-        (run 60 t)))
+        (run 300 t)))
     
 	;; clean-up: remove hooks
 	(remove-act-r-command-monitor "output-key" "geomates-key-press")
@@ -250,6 +253,6 @@
 ;;(defun print-message ()
 ;;  (format t ">>> Hello from a separate Lisp function!~%"))
   
-;; (format t "Loading model-dummy.lisp from ~A~%" *load-truename*)
+;;(format t "Loading model-dummy.lisp from ~A~%" *load-truename*)
 ;;(load-act-r-model
 ;; (merge-pathnames "model-dummy.lisp" *load-truename*))
