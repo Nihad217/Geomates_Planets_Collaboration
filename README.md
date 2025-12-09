@@ -22,7 +22,7 @@ The next level starts when either all diamonds are collected or the "s"/"skip" m
 An overview over the architecture is shown here:
 ![alt text](overview_architecture.png)
 
-The example code for the Planner (Python) will follow soon. 
+An Tutorial for the Planner/RPC can be found in the moodle.
 
 ## Installation game server
 The game server can either be installed via docker (recommend) or be build from scratch.
@@ -75,10 +75,12 @@ Don't forget to switch telnet into byte mode, so that keypresses are send immedi
 
 ## Connecting with ACT-R
 
-Assuming [ACT-R Sources](http://act-r.psy.cmu.edu/actr7.x/actr7.x.zip)  (actr7.x) are [compiled](http://act-r.psy.cmu.edu/actr7.x/QuickStart.txt) and in the same folder as the geomates folder run:
+Assuming [ACT-R Sources](http://act-r.psy.cmu.edu/actr7.x/actr7.x.zip)  (actr7.x) are [compiled](http://act-r.psy.cmu.edu/actr7.x/QuickStart.txt) and in the same folder as the geomates folder.
 
 Start Geomates server i.e. ``docker run -p 8000:8000 -p 45678:45678 geomates:latest sbcl --script geomates.lisp``
 
+You need two start two agents (two commands), so that the game can begin.
+These commands are execute one the folder above the geomates folder: 
 ```
 sbcl --load "actr7.x/load-act-r.lisp" --load "geomates/act-r-experiment.lisp" --eval '(load-act-r-model "geomates/model-dummy.lisp")'
 ```
@@ -87,7 +89,7 @@ When running in the Windows CommandPrompt you may escape the quotation marks dif
 sbcl --load "actr7.x/load-act-r.lisp" --load "geomates/act-r-experiment.lisp" --eval "(load-act-r-model \"geomates/model-dummy.lisp\")"
 ```
 
-to start the agent evaluate `(geomates-experiment)` in the ACT-R REPL to get into the ACT-R GUI Environemnt `(run-environment)`.
+to start the agent evaluate `(geomates-experiment)` in the ACT-R REPL to get into the ACT-R GUI Environment `(run-environment)`.
 
 
 ## Author and License 
