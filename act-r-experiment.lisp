@@ -84,11 +84,11 @@
       (loop for (what-raw . attributes) in updated-scene
             for what = (if (keywordp what-raw) what-raw (intern (string-upcase (string what-raw)) :keyword)) do
 	    (case what
-        (msg->rect
+        (:msg->rect
           (let ((messages (first attributes)))
             (dolist (msg messages)
               (handle-agent-message :rect msg))))
-        (msg->disc
+        (:msg->disc
             (let ((messages (first attributes)))
               (dolist (msg messages)
                 (handle-agent-message :disc msg))))
