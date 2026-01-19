@@ -89,6 +89,7 @@ class geomates:
         self.socket=socket.socket(socket.AF_INET,socket.SOCK_STREAM) 
         self.socket.connect((host,port)) 
         printf(f"connected as "{self.agent_type})  
+        Abdu
 """ 
 
 
