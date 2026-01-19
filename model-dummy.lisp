@@ -48,8 +48,8 @@
 
 
   ;; [find explanation in actr7.x/examples/vision-module]
-  (chunk-type (polygon-feature (:include visual-location)) regular)
-  (chunk-type (polygon (:include visual-object)) sides)
+  ;;(chunk-type (polygon-feature (:include visual-location)) regular)
+  ;;(chunk-type (polygon (:include visual-object)) sides)
   
   ;; [see definition in vision module]
   ;;(chunk-type (oval (:include visual-object)) (oval t))
@@ -68,14 +68,15 @@
    (move-left) (move-right)
    (move-up)  (move-down)
    (w) (a) (s) (d) 
-   (i-dont-know-where-to-go)
+   (go-up)
    (something-should-change)
    (i-want-to-do-something)
    (up-control    isa control intention move-up    button w speakname "move up")
    (down-control  isa control intention move-down  button s speakname "move down")
    (left-control  isa control intention move-left  button a speakname "move left")
    (right-control isa control intention move-right button d speakname "move right")
-   (first-goal isa goal state i-dont-know-where-to-go)
+   (first-goal isa goal state go-up)
+
    )
 
   (goal-focus first-goal)
@@ -137,7 +138,7 @@
      state free
  ==>
      =goal>
-     state i-dont-know-where-to-go
+     state go-up
      +manual>
      cmd press-key
      key =button
@@ -154,51 +155,19 @@
      buffer failure
 ==>
      =goal>
-        state i-dont-know-where-to-go
+        state go-up
      )
   
-  (p maybe-left
+  (p move-up
      =goal>
-     state i-dont-know-where-to-go
+     state go-up
      ?manual>
      state free
 ==>
      =goal>
-     state i-want-to-do-something
-     intention move-left
-     )
-  
-  (p maybe-right
-    =goal>
-     state i-dont-know-where-to-go
-     ?manual>
-     state free
-==>
-     =goal>
-     state i-want-to-do-something
-     intention move-right
-)
-  
-  (p maybe-down
-     =goal>
-     state i-dont-know-where-to-go
-     ?manual>
-     state free
-==>
-     =goal>
-        state i-want-to-do-something
-     intention move-down
-     )
-  
-  (p maybe-up
-     =goal>
-     state i-dont-know-where-to-go
-     ?manual>
-     state free
-==>
-    =goal>
      state i-want-to-do-something
      intention move-up
      )
+     
+)
   
-  )
