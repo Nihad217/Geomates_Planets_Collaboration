@@ -41,27 +41,7 @@
 
 (define-model lost-agent
 
-  ;; ACT-R parameters to choose production rules randomly if more than one is matched 
-  (sgp :egs 0.2)
-  (sgp :ans 0.5 :lf 0.2)
-  (sgp :esc t)
-
-
-  ;; [find explanation in actr7.x/examples/vision-module]
-  (chunk-type (polygon-feature (:include visual-location)) regular)
-  (chunk-type (polygon (:include visual-object)) sides)
-  
-  ;; [see definition in vision module]
-  ;;(chunk-type (oval (:include visual-object)) (oval t))
-  
-  ;; [might be obsolete] Do this to avoid the warnings when the chunks are created
-  (define-chunks true false polygon)
-  
-  ;; [might be obsolete] stuff the leftmost item
-  (set-visloc-default screen-x lowest)
-
-  (chunk-type goal state intention)
-  (chunk-type control intention button speakname)
+(chunk-type goal state intention)
 
   (add-dm
    (rect) (disc) (heard)
@@ -71,11 +51,7 @@
    (next-step)
    (something-should-change)
    (i-want-to-do-something)
-   (up-control    isa control intention move-up    button w speakname "move up")
-   (down-control  isa control intention move-down  button s speakname "move down")
-   (left-control  isa control intention move-left  button a speakname "move left")
-   (right-control isa control intention move-right button d speakname "move right")
-   (first-goal isa goal state next-step)
+   (first-goal isa goal state i-want-to-do-something)
 
    )
 
@@ -83,37 +59,10 @@
   
 
 
-;; Detect und Identify sounds in the enviroment!
-;; Step 1: detect new audio event and move to aural buffer
-(p detected-sound
-   =aural-location>
-     isa      audio-event
-     location =who
-   ?aural>
-     state    free
-   ==>
-   +aural>
-     isa      sound
-     event    =aural-location
-   +imaginal>
-     heard    =who)
-
-;; Step 2: hear the sound and print it
-(p hear
-   =aural>
-     isa     sound
-     content =x
-   =imaginal>
-     heard   =who
-   ==>
-   !output! ("I heard ~a say: ~a~%" =who =x)
-   )
-
 
 (p want-to-move
   =goal>
     state i-want-to-do-something
-    intention =intention
   ?retrieval>
     state free
 ==>
@@ -123,17 +72,16 @@
   ;; retrieve the control chunk that matches the intention
   +retrieval>
     isa control
-    intention =intention
 )
 
 
 ;; Move in direction and vocalize direction
-  (p move
+  (p move-up
      =goal>
      state something-should-change
+     intention move-up
      =retrieval>
      button =button
-     speakname =text
     ?manual>
      state free
  ==>
@@ -142,9 +90,6 @@
      +manual>
      cmd press-key
      key =button
-     +vocal>
-     isa speak
-     string =text
    )
      
 

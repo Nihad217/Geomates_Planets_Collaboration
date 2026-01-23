@@ -4,6 +4,11 @@ import time
 import math 
 from typing import List, Tuple, Dict 
 import heapq
+# dstar_server.py (Skizze)
+import sys, json
+from dStarSearch import dstar_plan  # deine D* Funktion
+
+
 
 class DStarLite: 
 
@@ -91,6 +96,21 @@ class geomates:
         printf(f"connected as "{self.agent_type})  
 """ 
 
+
+def main():
+    for line in sys.stdin:
+        req = json.loads(line)
+        start = tuple(req["start"])   # (sx, sy) oder Node-ID
+        goal  = tuple(req["goal"])
+        grid_or_graph = req["map"]    # z.B. Liste oder Adjazenz
+
+        path = dstar_plan(grid_or_graph, start, goal)
+        # path als Liste von Moves, z.B. ["left", "left", "jump", "right"]
+        sys.stdout.write(json.dumps({"path": path}) + "\n")
+        sys.stdout.flush()
+
+if __name__ == "__main__":
+    main()
 
     
 
