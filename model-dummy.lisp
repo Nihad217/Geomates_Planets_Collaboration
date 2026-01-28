@@ -75,7 +75,7 @@
    (down-control  isa control intention move-down  button s speakname "move down")
    (left-control  isa control intention move-left  button a speakname "move left")
    (right-control isa control intention move-right button d speakname "move right")
-   (first-goal isa goal state go-up)
+   (first-goal isa goal state go-right)
 
    )
 
@@ -138,14 +138,15 @@
      state free
  ==>
      =goal>
-     state go-up
+     state go-right 
      +manual>
      cmd press-key
      key =button
      +vocal>
      isa speak
      string =text
-   )
+   ) 
+   
      
 
   (p retrieval-failure
@@ -158,15 +159,15 @@
         state go-up
      )
   
-  (p move-up
+  (p move-right
      =goal>
-     state go-up
+      state go-right
      ?manual>
-     state free
-==>
+      state free
+==> 
      =goal>
-     state i-want-to-do-something
-     intention move-up
+      state i-want-to-do-something
+      intention move-right
      )
      
 )
