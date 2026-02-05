@@ -313,8 +313,12 @@
       (unwind-protect
 	   (multiple-value-bind (tcp-stream-1 tcp-stream-2 agent-socket) (await-agent-connections port) ; wait until agents have connected 
 	     ;; randomly assign disc and rect player
-	     (when (= 1 (random 2)) 
-	       (rotatef tcp-stream-1 tcp-stream-2))
+	     ;; (when (= 1 (random 2)) 
+	     ;;   (rotatef tcp-stream-1 tcp-stream-2))
+	     ;; (setq disc-agent-stream tcp-stream-1
+	     ;;       rect-agent-stream tcp-stream-2
+	     ;;       info-stream (make-broadcast-stream disc-agent-stream rect-agent-stream *standard-output*))
+	     ;; fixed assignment for testing: first agent is disc
 	     (setq disc-agent-stream tcp-stream-1
 		   rect-agent-stream tcp-stream-2
 		   info-stream (make-broadcast-stream disc-agent-stream rect-agent-stream *standard-output*))
