@@ -24,12 +24,6 @@ class DStarLite:
         self.goal = self.s_goal[0] 
 
 
-
-
-
-
-
-
     def heuristic(self,s1:Tuple[int,int],s2:Tuple[int,int])->float: 
         # manhattan distance as heuristic, could be used for our agent while approaching diamonds
         return abs(s1[0]-s2[0])+abs(s1[1]-s2[1]) 
@@ -87,6 +81,34 @@ class DStarLite:
                     if v in self.grid:
                         self.update_vertex(v) 
 #planner = DStarLite()
+
+    def planner_handle_request(line, planner): 
+
+        parts = line.strip().split()
+        if len(parts) != 6:
+            return "WAIT"
+
+        try:
+            x, y = int(parts[1]), int(parts[2])
+            gx, gy = int(parts[4]), int(parts[5])
+        except ValueError:
+            return "WAIT"
+
+        planner.s_start = (x, y)
+        planner.goal = (gx, gy)
+
+        planner.compute_path()
+
+        # choose best neighbor
+        moves = []
+        for dx, dy, name in [(-1,0,"LEFT"), (1,0,"RIGHT"), (0,-1,"DOWN"), (0,1,"UP")]:
+            v = (x+dx, y+dy)
+            cost = planner.g.get(v, float("inf"))
+            moves.append((cost, name))
+
+        moves.sort()
+        return moves[0][1]
+
 
 
 

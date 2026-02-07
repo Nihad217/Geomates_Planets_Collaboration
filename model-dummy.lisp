@@ -46,6 +46,32 @@
   (sgp :ans 0.5 :lf 0.2)
   (sgp :esc t)
 
+#+SBCL (require :sb-bsd-sockets)
+
+(defvar *planner-socket* nil)
+(defvar *planner-stream* nil)
+
+(defun planner-connect ()
+  (unless (and *planner-stream* (open-stream-p *planner-stream*))
+    (setf *planner-socket*
+          (make-instance 'sb-bsd-sockets:inet-socket :type :stream :protocol :tcp))
+    (sb-bsd-sockets:socket-connect *planner-socket* #(127 0 0 1) 5005)
+    (setf *planner-stream*
+          (sb-bsd-sockets:socket-make-stream *planner-socket*
+                                             :input t :output t :element-type :default))))
+
+(defun planner-next-intention (x y gx gy)
+  (planner-connect)
+  (format *planner-stream* "Self_POS ~a ~a GOAL ~a ~a~%" x y gx gy)
+  (finish-output *planner-stream*)
+  (let ((resp (string-trim '(#\Return #\Newline #\Space) (read-line *planner-stream*))))
+    (cond ((string= resp "LEFT")  'move-left)
+          ((string= resp "RIGHT") 'move-right)
+          ((string= resp "UP")    'move-up)
+          ((string= resp "DOWN")  'move-down)
+          (t 'move-right))))
+
+
 
   ;; [find explanation in actr7.x/examples/vision-module]
   ;;(chunk-type (polygon-feature (:include visual-location)) regular)
@@ -60,7 +86,7 @@
   ;; [might be obsolete] stuff the leftmost item
   (set-visloc-default screen-x lowest)
 
-  (chunk-type goal state intention)
+  (chunk-type goal state intention x y goal-x goal-y) 
   (chunk-type control intention button speakname)
 
   (add-dm
@@ -75,7 +101,13 @@
    (down-control  isa control intention move-down  button s speakname "move down")
    (left-control  isa control intention move-left  button a speakname "move left")
    (right-control isa control intention move-right button d speakname "move right")
-   (first-goal isa goal state go-right)
+   (first-goal isa goal 
+            
+            state i-want-to-do-something
+             x 10
+             y 23
+             goal-x 20
+             goal-y 26))
 
    )
 
@@ -111,20 +143,27 @@
 
 
 (p want-to-move
-  =goal>
-    state i-want-to-do-something
-    intention =intention
-  ?retrieval>
-    state free
+   =goal>
+     state i-want-to-do-something
+     x =x
+     y =y
+     goal-x =gx
+     goal-y =gy
 ==>
-  =goal>
-    state something-should-change
+   !bind! =intention
+     (planner-next-intention =x =y =gx =gy)
+   =goal>
+     state something-should-change
+     intention =intention)
 
-  ;; retrieve the control chunk that matches the intention
-  +retrieval>
-    isa control
-    intention =intention
-)
+(p retrieve-control
+   =goal>
+     state something-should-change
+     intention =i
+==>
+   +retrieval>
+     isa control
+     intention =i)
 
 
 ;; Move in direction and vocalize direction
@@ -168,7 +207,10 @@
      =goal>
       state i-want-to-do-something
       intention move-right
-     )
+     ) 
+
+
+
      
 )
   

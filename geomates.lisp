@@ -298,6 +298,8 @@
 ;; every level with a 0.1 second delay between updating the world. If all diamonds are collected, the next level is activated.
 ;; When we run out of levels, the game ends and connections are terminated.
 ;;
+
+
 (defun main ()
   "main loop of game server"
   (setf *random-state* (make-random-state t))
@@ -488,4 +490,6 @@
 	:done))))
 
 (eval-when (:execute :load-toplevel)
-  (main))
+  (main)) 
+
+
