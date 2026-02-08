@@ -14,7 +14,33 @@
 ;;; Additionally, you can use run-program to call any external software.
 ;;; Note that the process will be run in a null environment by default, so
 ;;; all pathnames must be explicit. To handle different locations, a simple
-;;; "or" may be all it takes:
+;;; "or" may be all it takes: 
+
+
+
+(defvar *planner-socket* nil)
+(defvar *planner-stream* nil)
+
+(defun planner-connect ()
+  (unless (and *planner-stream* (open-stream-p *planner-stream*))
+    (setf *planner-socket*
+          (make-instance 'sb-bsd-sockets:inet-socket :type :stream :protocol :tcp))
+    (sb-bsd-sockets:socket-connect *planner-socket* #(127 0 0 1) 5005)
+    (setf *planner-stream*
+          (sb-bsd-sockets:socket-make-stream *planner-socket*
+                                             :input t :output t :element-type :default))))
+
+(defun planner-next-intention (x y gx gy)
+  (planner-connect)
+  (format *planner-stream* "Self_POS ~a ~a GOAL ~a ~a~%" x y gx gy)
+  (finish-output *planner-stream*)
+  (let ((resp (string-trim '(#\Return #\Newline #\Space) (read-line *planner-stream*))))
+    (cond ((string= resp "LEFT")  'move-left)
+          ((string= resp "RIGHT") 'move-right)
+          ((string= resp "UP")    'move-up)
+          ((string= resp "DOWN")  'move-down)
+          (t 'move-right))))
+
 
 (defparameter *my-ls* (or (probe-file "/bin/ls")
 			  (probe-file "/usr/bin/ls")
