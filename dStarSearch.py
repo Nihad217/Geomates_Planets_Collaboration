@@ -4,6 +4,11 @@ import time
 import math 
 from typing import List, Tuple, Dict 
 import heapq
+# dstar_server.py (Skizze)
+import sys, json
+from dStarSearch import dstar_plan  # deine D* Funktion
+
+
 
 class DStarLite: 
 

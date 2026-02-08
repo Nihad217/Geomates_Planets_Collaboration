@@ -168,7 +168,7 @@
     (read-and-update-from-server)))
 
 (defun start-polling ()
-  "Starts the periodic polling of the game server to update the visicon and get new messages from the server."
+  "Starts the periodic polling of the game server to update the  and get new messages from the server."
   (schedule-periodic-event 1 'poll-game-server :details "Game Server Polling" :maintenance t))
 
 (defun geomates-experiment (&optional human)
