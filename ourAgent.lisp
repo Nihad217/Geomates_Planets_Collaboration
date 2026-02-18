@@ -19,27 +19,71 @@
 
 
 (defvar *planner-socket* nil)
-(defvar *planner-stream* nil)
+(defvar *planner-stream* nil) 
+(defvar *planner* (path-planning))
 
-(defun planner-connect ()
-  (unless (and *planner-stream* (open-stream-p *planner-stream*))
-    (setf *planner-socket*
-          (make-instance 'sb-bsd-sockets:inet-socket :type :stream :protocol :tcp))
-    (sb-bsd-sockets:socket-connect *planner-socket* #(127 0 0 1) 5005)
-    (setf *planner-stream*
-          (sb-bsd-sockets:socket-make-stream *planner-socket*
-                                             :input t :output t :element-type :default))))
+(defstruct planner 
+    width 
+    height 
+    grid 
+    g 
+    rhs 
+    start 
+    goal) 
 
-(defun planner-next-intention (x y gx gy)
-  (planner-connect)
-  (format *planner-stream* "Self_POS ~a ~a GOAL ~a ~a~%" x y gx gy)
-  (finish-output *planner-stream*)
-  (let ((resp (string-trim '(#\Return #\Newline #\Space) (read-line *planner-stream*))))
-    (cond ((string= resp "LEFT")  'move-left)
-          ((string= resp "RIGHT") 'move-right)
-          ((string= resp "UP")    'move-up)
-          ((string= resp "DOWN")  'move-down)
-          (t 'move-right))))
+(defun path-planning(&key(width 80)(height 40))
+  (let ((grid(make-hash-table :test 'equal)))
+    (dotimes (x width)
+      (dotimes (y height) 
+        (setf (gethash (list x y) grid) nil)))
+    (make-planner 
+    :width width 
+    :height height 
+    :grid grid  
+    :g (make-hash-table :test 'equal) 
+    :rhs (make-hash-table :test 'equal) 
+    :start (10 23) 
+    :goal (20 26))) 
+
+) 
+
+(defun planner-next-intention (planner x y gx gy)
+
+  (setf (planner-start planner) (list x y))
+  (setf (planner-goal planner) (list gx gy))
+
+  ;; choose a neighbor with a minimal heuristic 
+  (let* ((neighbors
+          (list (list -1 0 'move-left)
+                (list  1 0 'move-right)
+                (list  0 -1 'move-down)
+                (list  0  1 'move-up)))
+         (best nil)
+         (best-cost most-positive-fixnum))
+
+    (dolist (n neighbors)
+      (let* ((nx (+ x (first n)))
+             (ny (+ y (second n)))
+             (cost (heuristic (list nx ny) (list gx gy))))
+        (when (< cost best-cost)
+          (setf best-cost cost)
+          (setf best (third n)))))
+
+    best))
+
+
+
+;introducing a manhattan distance heuristic for calculating path  
+
+(def manhattan-distance(s1 s2) 
+  (+(abs(-(first s1)(first s2)))) 
+    (abs(-(second s1)(second s2)))
+
+)
+
+
+
+
 
 
 (defparameter *my-ls* (or (probe-file "/bin/ls")
